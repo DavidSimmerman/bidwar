@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
+	import { goto } from '$app/navigation';
 	import SplitBackground from '$lib/SplitBackground.svelte';
 	import { POOL_NAMES, POOLS } from '$lib/pools';
 	import type { Mode, TieRule } from '$lib/engine';
 
 	const PALETTE = ['#5b8cff', '#ff5f4d', '#35d07f', '#ffb020'];
-	const NAMES = ['You', 'Red', 'Green', 'Gold'];
+	const UNIT_MS = { s: 1000, m: 60_000, h: 3_600_000 };
 
 	let name = $state('');
 	let count = $state(2);
@@ -19,11 +20,8 @@
 	let roundsValue = $state(10);
 	let mode = $state<Mode>('live');
 	let tie = $state<TieRule>('rebid');
-	let showConfig = $state(false);
-	let dlg = $state<HTMLDialogElement>();
-	$effect(() => {
-		if (showConfig) dlg?.showModal();
-	});
+	let creating = $state(false);
+	let err = $state('');
 
 	const rounds = $derived(spotsMode === 'fixed' ? spots * count : roundsValue);
 	const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(n || lo)));
@@ -31,14 +29,37 @@
 	const timers: ['s' | 'm' | 'h', string][] = [['s', 'sec'], ['m', 'min'], ['h', 'hr']];
 	const ties: [TieRule, string][] = [['rebid', 'Rebid'], ['live', 'Go live'], ['random', 'Random'], ['toss', 'Toss it']];
 
-	function start() {
+	async function start() {
 		name = name.trim();
-		if (!name) return;
-		budget = clamp(budget, 5, 500);
-		spots = clamp(spots, 1, 20);
-		roundsValue = clamp(roundsValue, count, 200);
-		timerValue = clamp(timerValue, 1, 999);
-		showConfig = true;
+		if (!name) {
+			err = 'Enter a name first';
+			return;
+		}
+		creating = true;
+		err = '';
+		try {
+			const res = await fetch('/api/game', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					name,
+					pool,
+					players: count,
+					spots: spotsMode === 'fixed' ? clamp(spots, 1, 20) : null,
+					rounds: clamp(rounds, count, 500),
+					timerMs: timerUnlimited ? null : clamp(timerValue, 1, 999) * UNIT_MS[timerUnit],
+					budget: clamp(budget, 5, 500),
+					mode,
+					tie
+				})
+			});
+			if (!res.ok) throw new Error(await res.text());
+			const { id } = await res.json();
+			goto(`/g/${id}`);
+		} catch (e) {
+			err = e instanceof Error ? e.message : 'Could not create game';
+			creating = false;
+		}
 	}
 </script>
 
@@ -170,39 +191,12 @@
 			</div>
 		{/if}
 
+		{#if err}<div class="text-[12px] text-center" style="color:#ff5f4d">{err}</div>{/if}
 		<button
 			onclick={start}
-			class="w-full py-4 rounded-xl text-lg transition active:scale-[0.98] hover:brightness-110"
+			disabled={creating}
+			class="w-full py-4 rounded-xl text-lg transition active:scale-[0.98] hover:brightness-110 disabled:opacity-50"
 			style="background:#5b8cff;color:#0b0b12;font-weight:900;font-style:italic"
-		>START — INVITE {count - 1} {count === 2 ? 'PLAYER' : 'PLAYERS'}</button>
+		>{creating ? 'CREATING…' : `START — INVITE ${count - 1} ${count === 2 ? 'PLAYER' : 'PLAYERS'}`}</button>
 	</div>
 </div>
-
-<!-- config confirm — native <dialog> gives Esc-to-close, focus trap & backdrop for free.
-     engine v2 wires this to a real lobby next. -->
-<dialog bind:this={dlg} onclose={() => (showConfig = false)} class="config">
-	<div style="font-style:italic;font-weight:900;font-size:24px" class="mb-1">READY, {name.toUpperCase()}</div>
-	<div class="text-[12px] text-white/40 mb-4">Lobby + live game land with the N-player engine (next build).</div>
-	<div class="space-y-1.5 text-sm">
-		{#each [['Players', count], ['Pool', pool], ['Budget', `$${budget} each`], ['Timer', timerUnlimited ? 'none' : `${timerValue}${timerUnit} / pick`], ['Squad', spotsMode === 'fixed' ? `${spots} each` : 'unlimited'], ['Rounds', rounds], ['Mode', mode === 'live' ? 'Live' : `Silent · ${tie}`]] as [k, v]}
-			<div class="flex justify-between border-b border-white/5 pb-1.5"><span class="text-white/40 tracking-widest text-[11px] uppercase">{k}</span><span style="font-weight:700">{v}</span></div>
-		{/each}
-	</div>
-	<form method="dialog"><button class="w-full mt-5 py-3 rounded-xl" style="background:#5b8cff;color:#0b0b12;font-weight:900;font-style:italic">GOT IT</button></form>
-</dialog>
-
-<style>
-	.config {
-		margin: auto;
-		width: calc(100% - 2rem);
-		max-width: 380px;
-		color: #fff;
-		background: #0b0b12;
-		border: 1px solid #23233a;
-		border-radius: 1rem;
-		padding: 1.5rem;
-	}
-	.config::backdrop { background: rgba(0, 0, 0, 0.6); }
-	.config[open] { animation: pop 0.18s ease-out; }
-	@keyframes pop { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-</style>
