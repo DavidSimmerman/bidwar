@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	server: { host: true, allowedHosts: ['bidwar.simmerman.cc'] },
+	server: { host: true, allowedHosts: ['bidwar.simmerman.cc', 'bidwar-v2.simmerman.cc'] },
 	plugins: [
 		tailwindcss(),
 		sveltekit({
