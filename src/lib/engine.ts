@@ -226,7 +226,9 @@ function raise(s: GameState, pid: string, amount: number, now: number) {
 function passLive(s: GameState, pid: string, now: number, auto: boolean) {
 	const r = s.round!;
 	if (r.turnId !== pid) return;
-	if (r.leaderId == null && !auto) return; // opener must bid; only a timeout auto-passes them
+	// Opener must open a FRESH item with a bid (can't decline). Once there's a price on the
+	// table — a standing bid, or a tie→live floor — passing is a legal drop-out. Timeouts always pass.
+	if (r.currentBid === 0 && !auto) return;
 	const p = byId(s, pid)!;
 	if (!r.passed.includes(pid)) r.passed.push(pid);
 	if (!auto) s.log.push(`${p.name} passed`);
@@ -301,11 +303,12 @@ function applyTie(s: GameState, tied: string[], amount: number, now: number) {
 		r.currentBid = amount;
 		r.leaderId = null;
 		r.passed = [];
+		r.sealed = {};
 		r.turnId = tied[s.roundsPlayed % tied.length];
 		r.deadline = deadlineFrom(s, now);
 		s.log.push(`Tie → live from $${amount}`);
 	} else if (rule === 'random') {
-		const w = byId(s, tied[s.roundsPlayed % tied.length])!; // deterministic (seat-stable) pick
+		const w = byId(s, tied[Math.floor(Math.random() * tied.length)])!; // genuine coin flip
 		award(s, w.id, r.item, amount, `Coin flip → ${w.name} takes ${r.item}`, now);
 	} else {
 		toss(s, r.item, `Tie → ${r.item} tossed`, now);

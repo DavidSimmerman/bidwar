@@ -247,7 +247,7 @@
 									class="w-full bg-transparent text-center outline-none py-4 text-lg" style="font-style:italic;font-weight:900;color:{me?.color ?? '#5b8cff'}" />
 							</div>
 						</div>
-						{#if v.round.leaderId != null}
+						{#if v.round.currentBid > 0}
 							<button onclick={pass} class="w-full py-3 rounded-lg text-sm tracking-[0.3em] font-bold text-white/60" style="background:rgba(255,255,255,.06)">PASS</button>
 						{:else}
 							<div class="text-center text-[11px] text-white/40 tracking-widest">you open — bid at least $1</div>

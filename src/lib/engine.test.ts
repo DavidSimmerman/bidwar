@@ -96,6 +96,26 @@ test('silent tie → live converts the round and raises the floor', () => {
 	assert.equal(R(s).turnId, 'p0');
 });
 
+test('tie → live never deadlocks when the floor equals a budget (players can drop out)', () => {
+	const s = mk({ mode: 'silent', tie: 'live', budget: 5 });
+	act(s, 'p0', { type: 'seal', amount: 5 }, 0); // both all-in, tie at 5
+	act(s, 'p1', { type: 'seal', amount: 5 }, 0);
+	assert.equal(R(s).mode, 'live');
+	assert.equal(R(s).currentBid, 5); // neither can bid ABOVE 5 (both have exactly $5)
+	act(s, 'p0', { type: 'pass' }, 0); // allowed — not a fresh item
+	act(s, 'p1', { type: 'pass' }, 0);
+	assert.equal(s.lastResult?.winnerId, null); // nobody could top it → tossed, no deadlock
+	assert.equal(R(s).item, 'B');
+});
+
+test('tie → random picks one of the tied players at the tie price', () => {
+	const s = mk({ mode: 'silent', tie: 'random' });
+	act(s, 'p0', { type: 'seal', amount: 6 }, 0);
+	act(s, 'p1', { type: 'seal', amount: 6 }, 0);
+	assert.ok(['p0', 'p1'].includes(s.lastResult?.winnerId ?? ''));
+	assert.equal(s.lastResult?.price, 6);
+});
+
 test('solo: when one bidder is left they can Take for $1', () => {
 	const s = mk({ budget: 5 });
 	act(s, 'p0', { type: 'raise', amount: 1 }, 0);
