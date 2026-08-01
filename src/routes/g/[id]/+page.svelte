@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { fly, scale } from 'svelte/transition';
+	import { elasticOut } from 'svelte/easing';
 	import { page } from '$app/state';
 	import SplitBackground from '$lib/SplitBackground.svelte';
 	import type { GameView } from '$lib/engine';
@@ -151,7 +152,7 @@
 			<!-- LOBBY -->
 			<div class="flex-1 flex flex-col justify-center gap-4 text-center">
 				<div class="text-[11px] tracking-[0.4em] text-white/50">WAITING FOR PLAYERS · {v.players.length}/{v.rules.players}</div>
-				<div class="space-y-2">
+				<div class="space-y-2 stagger">
 					{#each v.players as p}
 						<div class="rounded-xl px-4 py-3 flex items-center justify-between" style="background:#0e0e18;border:1px solid {p.color}">
 							<span style="font-style:italic;font-weight:900;color:{p.color}">{p.name}{p.id === v.youId ? ' (you)' : ''}</span>
@@ -177,7 +178,7 @@
 					<div style="font-style:italic;font-weight:900;font-size:30px">FINAL SQUADS</div>
 					<div class="text-[12px] text-white/40">crowd voting to crown a winner — coming next</div>
 				</div>
-				<div class="flex-1 space-y-2 overflow-auto">
+				<div class="flex-1 space-y-2 overflow-auto stagger">
 					{#each v.players as p}
 						<div class="rounded-2xl px-4 py-3" style="background:#0e0e18;border:1px solid {p.color}44">
 							<div class="flex items-center justify-between">
@@ -202,7 +203,7 @@
 			</div>
 
 			<!-- players -->
-			<div class="grid grid-cols-2 gap-2">
+			<div class="grid grid-cols-2 gap-2 stagger">
 				{#each v.players as p}
 					{@const isLead = v.round.leaderId === p.id}
 					{@const isTurn = v.round.turnId === p.id}
@@ -222,13 +223,13 @@
 			<!-- item + bid -->
 			<div class="flex-1 flex flex-col items-center justify-center">
 				<div class="text-[10px] tracking-[0.3em] text-white/50 mb-1">ON THE BLOCK</div>
-				<div style="font-style:italic;font-weight:900;font-size:28px;text-align:center" class="mb-4">{v.round.item}</div>
+				{#key v.round.item}<div style="font-style:italic;font-weight:900;font-size:28px;text-align:center" class="mb-4 smash-in">{v.round.item}</div>{/key}
 				{#if !v.round.solo}
 					{@const leaderId = v.round.leaderId}
 					{@const leadColor = v.players.find((p) => p.id === leaderId)?.color ?? '#3a3a4a'}
-					<div class="w-32 h-32 rounded-full flex flex-col items-center justify-center" style="background:rgba(11,11,18,.85);border:3px solid {leadColor}">
+					<div class="w-32 h-32 rounded-full flex flex-col items-center justify-center ring-pulse" style="background:rgba(11,11,18,.85);border:3px solid {leadColor};--glow:{leadColor}">
 						{#if v.round.mode === 'live'}
-							<div style="font-weight:900;font-style:italic;font-size:44px;line-height:1">${v.round.currentBid}</div>
+							{#key v.round.currentBid}<div class="punch" style="font-weight:900;font-style:italic;font-size:44px;line-height:1">${v.round.currentBid}</div>{/key}
 							<div class="text-[9px] tracking-[0.2em] text-white/60">{v.round.leaderName ? `${v.round.leaderName} LEADS` : 'OPEN'}</div>
 						{:else}
 							<div style="font-weight:900;font-style:italic;font-size:20px">SEALED</div>
@@ -246,7 +247,7 @@
 				{#if v.round.solo}
 					{#if v.round.yourTurn}
 						<div class="grid grid-cols-2 gap-2">
-							<button onclick={take} class="py-4 rounded-lg font-bold" style="background:{me?.color ?? '#5b8cff'};color:#0b0b12;font-style:italic;font-weight:900" disabled={(me?.budget ?? 0) < 1}>TAKE · $1</button>
+							<button onclick={take} class="press py-4 rounded-lg font-bold" style="background:{me?.color ?? '#5b8cff'};color:#0b0b12;font-style:italic;font-weight:900" disabled={(me?.budget ?? 0) < 1}>TAKE · $1</button>
 							<button onclick={pass} class="py-4 rounded-lg font-bold text-white/70" style="background:rgba(255,255,255,.08)">PASS IT ON</button>
 						</div>
 					{:else}
@@ -257,7 +258,7 @@
 						<div class="grid grid-cols-3 gap-2">
 							{#each [1, 2] as inc}
 								<button onclick={() => raise(v!.round!.currentBid + inc)} disabled={v.round.currentBid + inc > (me?.budget ?? 0)}
-									class="py-4 rounded-lg font-bold text-lg disabled:opacity-30" style="background:{me?.color ?? '#5b8cff'};color:#0b0b12;font-style:italic;font-weight:900">+${inc}</button>
+									class="press py-4 rounded-lg font-bold text-lg disabled:opacity-30" style="background:{me?.color ?? '#5b8cff'};color:#0b0b12;font-style:italic;font-weight:900">+${inc}</button>
 							{/each}
 							<div class="rounded-lg flex items-center overflow-hidden" style="border:2px solid {me?.color ?? '#5b8cff'}">
 								<input type="number" inputmode="numeric" bind:value={custom} placeholder="$" onkeydown={(e) => e.key === 'Enter' && bidCustom()}
@@ -285,7 +286,7 @@
 								class="w-full bg-transparent outline-none py-4 pl-2 text-2xl" style="font-style:italic;font-weight:900" />
 							<span class="text-[11px] text-white/30 whitespace-nowrap">of ${me?.budget}</span>
 						</div>
-						<button onclick={sealCustom} class="w-full py-4 rounded-xl active:scale-95 transition" style="background:{me?.color ?? '#5b8cff'};color:#0b0b12;font-weight:900;font-style:italic">LOCK IT IN</button>
+						<button onclick={sealCustom} class="press w-full py-4 rounded-xl" style="background:{me?.color ?? '#5b8cff'};color:#0b0b12;font-weight:900;font-style:italic">LOCK IT IN</button>
 					{/if}
 				{/if}
 
@@ -298,11 +299,14 @@
 
 	<!-- win popup -->
 	{#if popup}
-		<div class="fixed inset-x-0 bottom-28 z-[60] flex justify-center px-4 pointer-events-none" in:scale={{ start: 0.8, duration: 250 }} out:fly={{ y: 20, duration: 200 }}>
-			<div class="rounded-2xl px-6 py-3 text-center shadow-2xl" style="background:#0b0b12;border:2px solid {popup.color}">
-				<div class="text-[10px] tracking-[0.3em]" style="color:{popup.color}">DRAFTED</div>
-				<div style="font-style:italic;font-weight:900;font-size:22px">{popup.item}</div>
-				<div class="text-[12px] text-white/60">{popup.name} · {popup.price ? `$${popup.price}` : 'free'}</div>
+		<div class="fixed inset-x-0 bottom-28 z-[60] flex justify-center px-4 pointer-events-none">
+			<div class="relative" in:scale={{ start: 0.4, duration: 550, easing: elasticOut }} out:fly={{ y: 20, duration: 200 }}>
+				<div class="burst absolute inset-0 rounded-[2rem] -z-10" style="background:{popup.color};opacity:.55"></div>
+				<div class="rounded-2xl px-6 py-3 text-center shadow-2xl" style="background:#0b0b12;border:2px solid {popup.color}">
+					<div class="text-[10px] tracking-[0.3em]" style="color:{popup.color}">DRAFTED</div>
+					<div style="font-style:italic;font-weight:900;font-size:22px">{popup.item}</div>
+					<div class="text-[12px] text-white/60">{popup.name} · {popup.price ? `$${popup.price}` : 'free'}</div>
+				</div>
 			</div>
 		</div>
 	{/if}

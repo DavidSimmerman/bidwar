@@ -9,3 +9,64 @@ body {
 	color: #fff;
 	font-family: 'Archivo', system-ui, sans-serif;
 }
+
+/* ---- Smash-Bros-style motion layer (reused across screens) ---- */
+/* slam in with an overshoot; stagger with inline animation-delay */
+@keyframes smashIn {
+	0% { transform: translateY(26px) scale(0.86); opacity: 0; }
+	60% { transform: translateY(-5px) scale(1.03); opacity: 1; }
+	100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.smash-in { animation: smashIn 0.42s cubic-bezier(0.2, 0.9, 0.2, 1.2) backwards; }
+
+/* slam in from the side (menu rows / player cards) */
+@keyframes smashLeft {
+	0% { transform: translateX(-40px) scale(0.9); opacity: 0; }
+	65% { transform: translateX(4px) scale(1.02); opacity: 1; }
+	100% { transform: translateX(0) scale(1); opacity: 1; }
+}
+.smash-left { animation: smashLeft 0.4s cubic-bezier(0.2, 0.9, 0.2, 1.2) backwards; }
+
+/* a quick punch (re-key the element to replay it) */
+@keyframes punch {
+	0% { transform: scale(0.7); }
+	55% { transform: scale(1.15); }
+	100% { transform: scale(1); }
+}
+.punch { animation: punch 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+
+/* idle pulse for the live bid ring — set --glow to the leader colour */
+@keyframes ringPulse {
+	0%, 100% { box-shadow: 0 0 22px -6px var(--glow, transparent); }
+	50% { box-shadow: 0 0 46px 2px var(--glow, transparent); }
+}
+.ring-pulse { animation: ringPulse 1.4s ease-in-out infinite; }
+
+/* impact burst behind the win popup */
+@keyframes burst {
+	0% { transform: scale(0.2); opacity: 0.9; }
+	100% { transform: scale(2.4); opacity: 0; }
+}
+.burst { animation: burst 0.6s ease-out forwards; }
+
+/* slam a whole list/menu in, staggered — put `stagger` on the container */
+.stagger > * { animation: smashLeft 0.4s cubic-bezier(0.2, 0.9, 0.2, 1.2) backwards; }
+.stagger > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger > *:nth-child(2) { animation-delay: 0.09s; }
+.stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger > *:nth-child(4) { animation-delay: 0.21s; }
+.stagger > *:nth-child(5) { animation-delay: 0.27s; }
+.stagger > *:nth-child(6) { animation-delay: 0.33s; }
+.stagger > *:nth-child(7) { animation-delay: 0.39s; }
+.stagger > *:nth-child(8) { animation-delay: 0.45s; }
+.stagger > *:nth-child(n + 9) { animation-delay: 0.5s; }
+
+/* springy press for interactive controls */
+.press { transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.press:active { transform: scale(0.88); }
+
+@media (prefers-reduced-motion: reduce) {
+	.smash-in, .smash-left, .punch, .ring-pulse, .burst, .stagger > * { animation: none; }
+	.press { transition: none; }
+	.press:active { transform: none; }
+}

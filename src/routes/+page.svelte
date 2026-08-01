@@ -91,13 +91,13 @@
 		<div class="absolute inset-0 flex flex-col items-center justify-between py-6" style="background:linear-gradient(180deg,rgba(10,10,12,.15),rgba(10,10,12,.55))">
 			<div class="text-center">
 				<div class="text-[11px] tracking-[0.5em] text-white/70">A BIDDING WAR</div>
-				<div style="font-style:italic;font-weight:900;font-size:52px;line-height:1" class="text-white drop-shadow-lg">BID WAR</div>
+				<div style="font-style:italic;font-weight:900;font-size:52px;line-height:1" class="text-white drop-shadow-lg smash-in">BID WAR</div>
 			</div>
-			<div class="flex gap-2">
+			<div class="flex gap-2 stagger">
 				{#each [2, 3, 4] as n}
 					<button
 						onclick={() => (count = n)}
-						class="px-5 py-2.5 rounded-xl text-sm font-bold transition active:scale-95"
+						class="press px-5 py-2.5 rounded-xl text-sm font-bold"
 						style={count === n
 							? 'background:#fff;color:#0b0b12'
 							: 'background:rgba(0,0,0,.4);color:#fff;border:1px solid rgba(255,255,255,.25)'}
@@ -108,7 +108,7 @@
 	</div>
 
 	<!-- FORM -->
-	<div class="flex-1 w-full max-w-[440px] mx-auto px-5 py-6 space-y-5">
+	<div class="flex-1 w-full max-w-[440px] mx-auto px-5 py-6 space-y-5 stagger">
 		<!-- playing as (name is set once via the gate, then remembered) -->
 		<div class="flex items-center justify-between">
 			<div class="text-sm text-white/60">Playing as <b class="text-white" style="font-style:italic">{name || '—'}</b></div>
@@ -209,7 +209,7 @@
 		<button
 			onclick={start}
 			disabled={creating}
-			class="w-full py-4 rounded-xl text-lg transition active:scale-[0.98] hover:brightness-110 disabled:opacity-50"
+			class="press w-full py-4 rounded-xl text-lg hover:brightness-110 disabled:opacity-50"
 			style="background:#5b8cff;color:#0b0b12;font-weight:900;font-style:italic"
 		>{creating ? 'CREATING…' : `START — INVITE ${count - 1} ${count === 2 ? 'PLAYER' : 'PLAYERS'}`}</button>
 	</div>
