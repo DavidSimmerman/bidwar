@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { fly, scale } from 'svelte/transition';
 	import { page } from '$app/state';
 	import SplitBackground from '$lib/SplitBackground.svelte';
 	import type { GameView } from '$lib/engine';
@@ -11,6 +12,11 @@
 	let custom = $state('');
 	let copied = $state(false);
 	let showBoard = $state(false);
+	let introDone = $state(false);
+	let popup = $state<{ name: string; item: string; price: number; color: string } | null>(null);
+	let lastRounds = -1;
+	let introStarted = false;
+	let popTimer: ReturnType<typeof setTimeout>;
 
 	let deadlineAt = $state<number | null>(null);
 	let nowMs = $state(Date.now());
@@ -21,9 +27,28 @@
 	const colors = $derived((v?.players ?? []).map((p) => p.color));
 
 	function apply(view: GameView) {
+		// pop a toast whenever a new round resolves with a winner
+		const lr = view.lastResult;
+		if (lastRounds >= 0 && view.roundsPlayed > lastRounds && lr?.winnerId) {
+			const w = view.players.find((p) => p.id === lr.winnerId);
+			popup = { name: lr.winnerName ?? 'Someone', item: lr.item, price: lr.price, color: w?.color ?? '#5b8cff' };
+			clearTimeout(popTimer);
+			popTimer = setTimeout(() => (popup = null), 2600);
+		}
+		lastRounds = view.roundsPlayed;
 		v = view;
 		deadlineAt = view.round?.msLeft != null ? Date.now() + view.round.msLeft : null;
 	}
+
+	// reveal the game UI only once the split intro has played (skip the wait for reduced-motion)
+	$effect(() => {
+		if (v?.status === 'active' && !introStarted) {
+			introStarted = true;
+			const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+			if (reduce) introDone = true;
+			else setTimeout(() => (introDone = true), 1450);
+		}
+	});
 	async function refresh() {
 		try {
 			const res = await fetch(`/api/game/${id}`);
@@ -71,14 +96,10 @@
 		return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 	}
 
-	// winner = most spots, tiebreak most budget (used only to rank the final board; crowd voting is next)
-	const ranked = $derived(
-		[...(v?.players ?? [])].sort((a, b) => b.squad.length - a.squad.length || b.budget - a.budget)
-	);
-
 	let pollId: ReturnType<typeof setInterval>;
 	let tickId: ReturnType<typeof setInterval>;
 	onMount(() => {
+		joinName = localStorage.getItem('bw_name') ?? ''; // prefill from the name you set on the home page
 		refresh();
 		pollId = setInterval(refresh, 1000);
 		tickId = setInterval(() => (nowMs = Date.now()), 400);
@@ -86,6 +107,7 @@
 	onDestroy(() => {
 		clearInterval(pollId);
 		clearInterval(tickId);
+		clearTimeout(popTimer);
 	});
 </script>
 
@@ -148,19 +170,19 @@
 			</div>
 
 		{:else if v.status === 'over'}
-			<!-- RESULTS (crowd voting lands next) -->
+			<!-- RESULTS — no auto-winner; the crowd vote decides (that page is next) -->
 			<div class="flex-1 flex flex-col py-6 gap-3">
 				<div class="text-center">
-					<div class="text-[11px] tracking-[0.4em] text-white/50">FINAL DRAFT</div>
-					<div style="font-style:italic;font-weight:900;font-size:30px">WHO BUILT IT BEST?</div>
-					<div class="text-[12px] text-white/40">crowd voting coming — squads below</div>
+					<div class="text-[11px] tracking-[0.4em] text-white/50">THE DRAFT IS DONE</div>
+					<div style="font-style:italic;font-weight:900;font-size:30px">FINAL SQUADS</div>
+					<div class="text-[12px] text-white/40">crowd voting to crown a winner — coming next</div>
 				</div>
 				<div class="flex-1 space-y-2 overflow-auto">
-					{#each ranked as p, i}
-						<div class="rounded-2xl px-4 py-3" style="background:#0e0e18;border:1px solid {i === 0 ? p.color : '#23233a'}">
+					{#each v.players as p}
+						<div class="rounded-2xl px-4 py-3" style="background:#0e0e18;border:1px solid {p.color}44">
 							<div class="flex items-center justify-between">
-								<span style="font-style:italic;font-weight:900;color:{p.color}">{p.name}{i === 0 ? ' 👑' : ''}{p.id === v.youId ? ' (you)' : ''}</span>
-								<span class="text-[11px] text-white/40">${p.budget} left · {p.squad.length}</span>
+								<span style="font-style:italic;font-weight:900;color:{p.color}">{p.name}{p.id === v.youId ? ' (you)' : ''}</span>
+								<span class="text-[11px] text-white/40">${p.budget} left · {p.squad.length} drafted</span>
 							</div>
 							<div class="flex flex-wrap gap-1 mt-1.5">
 								{#each p.squad as s}<span class="text-[11px] px-2 py-0.5 rounded" style="background:{p.color}22;color:{p.color}">{s}</span>{/each}
@@ -172,6 +194,8 @@
 			</div>
 
 		{:else if v.round}
+			{#if introDone}
+			<div class="flex-1 flex flex-col" in:fly={{ y: 16, duration: 400 }}>
 			<!-- ACTIVE ROUND -->
 			<div class="pt-4 pb-3 text-center text-[11px] tracking-[0.3em] text-white/60">
 				{v.rules.pool.toUpperCase()} · ROUND {v.roundsPlayed + 1}/{v.rules.rounds} · {v.round.mode.toUpperCase()}{v.round.solo ? ' · SOLO' : ''}
@@ -194,13 +218,6 @@
 					</div>
 				{/each}
 			</div>
-
-			<!-- last result -->
-			{#if v.lastResult}
-				<div class="mt-2 rounded-lg px-3 py-1.5 text-center text-[12px]" style="background:rgba(255,255,255,.06)">
-					{v.lastResult.winnerId ? `${v.lastResult.winnerName} got ${v.lastResult.item}${v.lastResult.price ? ` · $${v.lastResult.price}` : ' · free'}` : `${v.lastResult.item} — no sale`}
-				</div>
-			{/if}
 
 			<!-- item + bid -->
 			<div class="flex-1 flex flex-col items-center justify-center">
@@ -274,8 +291,21 @@
 
 				<button onclick={() => (showBoard = !showBoard)} class="w-full py-2 rounded-lg text-[11px] tracking-[0.25em] text-white/40" style="background:rgba(255,255,255,.04)">▤ DRAFT BOARD</button>
 			</div>
+			</div>
+			{/if}
 		{/if}
 	</div>
+
+	<!-- win popup -->
+	{#if popup}
+		<div class="fixed inset-x-0 bottom-28 z-[60] flex justify-center px-4 pointer-events-none" in:scale={{ start: 0.8, duration: 250 }} out:fly={{ y: 20, duration: 200 }}>
+			<div class="rounded-2xl px-6 py-3 text-center shadow-2xl" style="background:#0b0b12;border:2px solid {popup.color}">
+				<div class="text-[10px] tracking-[0.3em]" style="color:{popup.color}">DRAFTED</div>
+				<div style="font-style:italic;font-weight:900;font-size:22px">{popup.item}</div>
+				<div class="text-[12px] text-white/60">{popup.name} · {popup.price ? `$${popup.price}` : 'free'}</div>
+			</div>
+		</div>
+	{/if}
 
 	<!-- draft board sheet -->
 	{#if showBoard}{#if v}

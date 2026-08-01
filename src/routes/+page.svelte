@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import SplitBackground from '$lib/SplitBackground.svelte';
 	import { POOL_NAMES, POOLS } from '$lib/pools';
@@ -9,12 +10,13 @@
 	const UNIT_MS = { s: 1000, m: 60_000, h: 3_600_000 };
 
 	let name = $state('');
+	let nameGate = $state(false);
 	let count = $state(2);
 	let pool = $state('NBA GOATs');
 	let budget = $state(20);
 	let timerValue = $state(1);
 	let timerUnit = $state<'s' | 'm' | 'h'>('m');
-	let timerUnlimited = $state(false);
+	let timerUnlimited = $state(true); // unlimited time is the default
 	let spotsMode = $state<'fixed' | 'unlimited'>('fixed');
 	let spots = $state(5);
 	let roundsValue = $state(10);
@@ -22,6 +24,23 @@
 	let tie = $state<TieRule>('rebid');
 	let creating = $state(false);
 	let err = $state('');
+
+	// Name is asked once (first visit) and remembered — not re-typed per game.
+	onMount(() => {
+		name = localStorage.getItem('bw_name') ?? '';
+		if (!name) nameGate = true;
+	});
+	function saveName() {
+		name = name.trim();
+		if (!name) return;
+		localStorage.setItem('bw_name', name);
+		nameGate = false;
+	}
+	let nameDlg = $state<HTMLDialogElement>();
+	$effect(() => {
+		if (nameGate) nameDlg?.showModal();
+		else nameDlg?.close();
+	});
 
 	const rounds = $derived(spotsMode === 'fixed' ? spots * count : roundsValue);
 	const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(n || lo)));
@@ -90,16 +109,10 @@
 
 	<!-- FORM -->
 	<div class="flex-1 w-full max-w-[440px] mx-auto px-5 py-6 space-y-5">
-		<!-- name -->
-		<div>
-			<div class="text-[10px] tracking-[0.3em] text-white/40 mb-2">YOUR NAME</div>
-			<input
-				bind:value={name}
-				maxlength="16"
-				placeholder="e.g. Dav"
-				class="w-full rounded-xl px-4 py-3 text-lg outline-none"
-				style="background:#0e0e18;border:1px solid #23233a;color:#fff;font-style:italic;font-weight:700"
-			/>
+		<!-- playing as (name is set once via the gate, then remembered) -->
+		<div class="flex items-center justify-between">
+			<div class="text-sm text-white/60">Playing as <b class="text-white" style="font-style:italic">{name || '—'}</b></div>
+			<button onclick={() => (nameGate = true)} class="text-[11px] tracking-widest font-bold active:scale-95 transition" style="color:#5b8cff">CHANGE</button>
 		</div>
 
 		<!-- pool -->
@@ -112,7 +125,7 @@
 			>
 				{#each POOL_NAMES as p}<option value={p}>{p}</option>{/each}
 			</select>
-			<div class="text-[11px] text-white/25 mt-1">Custom pools coming soon</div>
+			<div class="text-[11px] text-white/25 mt-1">Pool market — build & browse your own — coming next</div>
 		</div>
 
 		<!-- budget + timer (fully variable) -->
@@ -127,18 +140,19 @@
 			</div>
 			<div>
 				<div class="text-[10px] tracking-[0.3em] text-white/40 mb-2">TIME / PICK</div>
-				{#if timerUnlimited}
-					<button onclick={() => (timerUnlimited = false)} class="w-full rounded-xl py-3 text-lg" style="background:#0e0e18;border:1px solid #23233a;color:#fff;font-style:italic;font-weight:900">∞ no limit</button>
-				{:else}
-					<div class="flex items-center rounded-xl px-2" style="background:#0e0e18;border:1px solid #23233a">
+				<div class="grid grid-cols-2 gap-1 p-1 rounded-xl" style="background:#0e0e18;border:1px solid #23233a">
+					<button onclick={() => (timerUnlimited = true)} class="py-2 rounded-lg text-sm font-bold transition active:scale-95" style={timerUnlimited ? 'background:#5b8cff;color:#0b0b12;font-style:italic' : 'color:rgba(255,255,255,.55)'}>∞ None</button>
+					<button onclick={() => (timerUnlimited = false)} class="py-2 rounded-lg text-sm font-bold transition active:scale-95" style={!timerUnlimited ? 'background:#5b8cff;color:#0b0b12;font-style:italic' : 'color:rgba(255,255,255,.55)'}>Timed</button>
+				</div>
+				{#if !timerUnlimited}
+					<div class="flex items-center rounded-xl px-2 mt-1" style="background:#0e0e18;border:1px solid #23233a" transition:fly={{ y: -6, duration: 150 }}>
 						<input type="number" min="1" max="999" bind:value={timerValue}
-							class="w-full bg-transparent outline-none py-3 pl-2 text-lg" style="font-style:italic;font-weight:900" />
+							class="w-full bg-transparent outline-none py-2.5 pl-2 text-lg" style="font-style:italic;font-weight:900" />
 						<select bind:value={timerUnit} class="bg-transparent outline-none text-sm text-white/70 pr-1">
 							{#each timers as [u, label]}<option value={u} style="color:#000">{label}</option>{/each}
 						</select>
 					</div>
 				{/if}
-				<button onclick={() => (timerUnlimited = !timerUnlimited)} class="text-[11px] text-white/30 mt-1 tracking-widest">{timerUnlimited ? 'set a timer' : 'make it unlimited'}</button>
 			</div>
 		</div>
 
@@ -200,3 +214,37 @@
 		>{creating ? 'CREATING…' : `START — INVITE ${count - 1} ${count === 2 ? 'PLAYER' : 'PLAYERS'}`}</button>
 	</div>
 </div>
+
+<!-- first-visit name gate (native <dialog>: Esc/focus/backdrop for free) -->
+<dialog bind:this={nameDlg} onclose={() => (nameGate = false)} class="namegate">
+	<div class="text-center">
+		<div class="text-[11px] tracking-[0.4em] text-white/50">WELCOME TO</div>
+		<div style="font-style:italic;font-weight:900;font-size:36px" class="mb-3">BID WAR</div>
+	</div>
+	<div class="text-sm text-white/50 text-center mb-3">What should we call you?</div>
+	<input
+		bind:value={name}
+		maxlength="16"
+		placeholder="your name"
+		onkeydown={(e) => e.key === 'Enter' && saveName()}
+		class="w-full rounded-xl px-4 py-3 text-lg text-center outline-none"
+		style="background:#0e0e18;border:1px solid #23233a;color:#fff;font-style:italic;font-weight:900"
+	/>
+	<button onclick={saveName} class="w-full mt-3 py-3 rounded-xl active:scale-95 transition" style="background:#5b8cff;color:#0b0b12;font-weight:900;font-style:italic">LET'S GO</button>
+</dialog>
+
+<style>
+	.namegate {
+		margin: auto;
+		width: calc(100% - 2rem);
+		max-width: 360px;
+		background: #0b0b12;
+		border: 1px solid #23233a;
+		border-radius: 1rem;
+		padding: 1.75rem;
+		color: #fff;
+	}
+	.namegate::backdrop { background: rgba(10, 10, 12, 0.82); }
+	.namegate[open] { animation: pop 0.18s ease-out; }
+	@keyframes pop { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
