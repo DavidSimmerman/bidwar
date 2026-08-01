@@ -244,7 +244,14 @@ function advanceLive(s: GameState, fromId: string, now: number) {
 	let next: string | null = null;
 	for (let i = 1; i <= seats.length; i++) {
 		const id = seats[(start + i) % seats.length];
-		if (id !== r.leaderId && !r.passed.includes(id) && participants(s).some((x) => x.id === id)) {
+		// a contender must be able to actually outbid — a player who can't afford more isn't
+		// handed a dead turn just to pass; their inability to raise means the auction is over
+		if (
+			id !== r.leaderId &&
+			!r.passed.includes(id) &&
+			participants(s).some((x) => x.id === id) &&
+			byId(s, id)!.budget > r.currentBid
+		) {
 			next = id;
 			break;
 		}
@@ -254,7 +261,7 @@ function advanceLive(s: GameState, fromId: string, now: number) {
 			const w = byId(s, r.leaderId)!;
 			award(s, w.id, r.item, r.currentBid, `${w.name} won ${r.item} for $${r.currentBid}`, now);
 		} else {
-			toss(s, r.item, `${r.item} — no bids`, now);
+			unsold(s, r.item, now);
 		}
 		return;
 	}
@@ -276,7 +283,7 @@ function resolveSilent(s: GameState, now: number) {
 	const r = s.round!;
 	const bids = participants(s).map((p) => ({ id: p.id, bid: r.sealed[p.id] ?? 0 }));
 	const max = Math.max(0, ...bids.map((b) => b.bid));
-	if (max <= 0) return toss(s, r.item, `${r.item} — no bids`, now);
+	if (max <= 0) return unsold(s, r.item, now);
 	const top = bids.filter((b) => b.bid === max).map((b) => b.id);
 	if (top.length === 1) {
 		const w = byId(s, top[0])!;
@@ -339,8 +346,10 @@ export function resolveExpired(s: GameState, now: number) {
 	while (s.status === 'active' && s.round && s.round.deadline != null && now > s.round.deadline) {
 		const r = s.round;
 		if (r.solo) soloPass(s, r.turnId!, now);
-		else if (r.mode === 'live') passLive(s, r.turnId!, now, true);
-		else resolveSilent(s, now);
+		else if (r.mode === 'live') {
+			if (r.currentBid === 0) raise(s, r.turnId!, 1, now); // opener auto-opens at $1 — a fresh item never goes unsold on the clock
+			else passLive(s, r.turnId!, now, true);
+		} else resolveSilent(s, now);
 		if (++guard > 100) break;
 	}
 }
@@ -358,6 +367,14 @@ function toss(s: GameState, item: string, note: string, now: number) {
 	record(s, { item, winnerId: null, price: 0, note });
 	s.round = null;
 	startRound(s, now);
+}
+// A fresh item nobody bid on isn't a "no sale" — hand it to the next player who needs one, free.
+function unsold(s: GameState, item: string, now: number) {
+	const ns = needers(s);
+	if (ns.length === 0) return toss(s, item, `${item} left on the board`, now);
+	const who = ns[s.dealPointer % ns.length];
+	s.dealPointer++;
+	award(s, who.id, item, 0, `${item} goes to ${who.name} — no bids`, now);
 }
 function record(s: GameState, result: Result) {
 	s.lastResult = result;
