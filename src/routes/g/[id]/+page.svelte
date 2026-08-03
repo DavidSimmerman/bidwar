@@ -271,7 +271,7 @@
 							<div class="text-center text-[11px] text-white/40 tracking-widest">you open — bid at least $1</div>
 						{/if}
 					{:else}
-						<div class="text-center py-4 text-white/40 text-sm tracking-widest">waiting for {v.round.leaderName ?? 'others'}…</div>
+						<div class="text-center py-4 text-white/40 text-sm tracking-widest">waiting for {v.players.find(p => p.id === v.round.turnId)?.name ?? 'others'}…</div>
 					{/if}
 				{:else}
 					<!-- silent -->
@@ -303,9 +303,10 @@
 			<div class="relative" in:scale={{ start: 0.4, duration: 550, easing: elasticOut }} out:fly={{ y: 20, duration: 200 }}>
 				<div class="burst absolute inset-0 rounded-[2rem] -z-10" style="background:{popup.color};opacity:.55"></div>
 				<div class="rounded-2xl px-6 py-3 text-center shadow-2xl" style="background:#0b0b12;border:2px solid {popup.color}">
-					<div class="text-[10px] tracking-[0.3em]" style="color:{popup.color}">DRAFTED</div>
+					<div class="text-[10px] tracking-[0.3em]" style="color:{popup.color}">SOLD</div>
 					<div style="font-style:italic;font-weight:900;font-size:22px">{popup.item}</div>
-					<div class="text-[12px] text-white/60">{popup.name} · {popup.price ? `$${popup.price}` : 'free'}</div>
+					<div class="text-[13px] font-bold" style="color:{popup.color}">{popup.name}</div>
+					<div class="text-[11px] text-white/40">{popup.price ? `$${popup.price}` : 'free'}</div>
 				</div>
 			</div>
 		</div>

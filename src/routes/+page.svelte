@@ -86,7 +86,7 @@
 	<!-- HERO — animated split, replays when player count changes -->
 	<div class="relative h-[300px] shrink-0 overflow-hidden">
 		{#key count}
-			<SplitBackground {count} colors={PALETTE.slice(0, count)} />
+			<SplitBackground {count} colors={PALETTE.slice(0, count)} preview />
 		{/key}
 		<div class="absolute inset-0 flex flex-col items-center justify-between py-6" style="background:linear-gradient(180deg,rgba(10,10,12,.15),rgba(10,10,12,.55))">
 			<div class="text-center">
