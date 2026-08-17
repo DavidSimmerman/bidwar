@@ -1,7 +1,6 @@
 import type { Cookies } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
 import type { Rules, Mode, TieRule } from '$lib/engine';
-import { POOLS } from '$lib/pools';
 
 const MODES: Mode[] = ['live', 'silent'];
 const TIES: TieRule[] = ['rebid', 'live', 'random', 'toss'];
@@ -35,11 +34,11 @@ export const cleanName = (v: unknown): string =>
 const int = (v: unknown) => (Number.isInteger(Number(v)) ? Number(v) : NaN);
 
 // Validate untrusted rules at the trust boundary. Returns null if invalid.
-export function parseRules(body: unknown): Rules | null {
+// `poolTitle` is resolved by the caller from a real draft row — never taken from the body.
+export function parseRules(body: unknown, poolTitle: string): Rules | null {
 	if (!body || typeof body !== 'object') return null;
 	const b = body as Record<string, unknown>;
 
-	if (typeof b.pool !== 'string' || !(b.pool in POOLS)) return null;
 	if (!MODES.includes(b.mode as Mode)) return null;
 	if (!TIES.includes(b.tie as TieRule)) return null;
 
@@ -69,7 +68,7 @@ export function parseRules(body: unknown): Rules | null {
 	}
 
 	return {
-		pool: b.pool,
+		pool: poolTitle,
 		players,
 		spots,
 		rounds,

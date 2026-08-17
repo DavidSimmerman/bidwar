@@ -151,6 +151,11 @@
 		{:else if v.status === 'lobby'}
 			<!-- LOBBY -->
 			<div class="flex-1 flex flex-col justify-center gap-4 text-center">
+				<!-- what you're here to draft — invitees land straight on this screen -->
+				<div>
+					<div class="text-[10px] tracking-[0.4em] text-white/40">BIDDING OVER</div>
+					<div style="font-style:italic;font-weight:900;font-size:26px;line-height:1.1" class="mt-1">{v.rules.pool}</div>
+				</div>
 				<div class="text-[11px] tracking-[0.4em] text-white/50">WAITING FOR PLAYERS · {v.players.length}/{v.rules.players}</div>
 				<div class="space-y-2 stagger">
 					{#each v.players as p}
