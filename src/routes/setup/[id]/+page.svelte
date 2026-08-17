@@ -9,6 +9,10 @@
 	let { data } = $props();
 	const draft = $derived(data.draft);
 
+	// Svelte transitions aren't covered by the CSS reduced-motion block — gate them here.
+	const motionOK = () =>
+		typeof matchMedia === 'undefined' || !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 	const PALETTE = ['#5b8cff', '#ff5f4d', '#35d07f', '#ffb020'];
 	const UNIT_MS = { s: 1000, m: 60_000, h: 3_600_000 };
 
@@ -112,13 +116,13 @@
 			<div class="text-sm text-white/60">Playing as <b class="text-white" style="font-style:italic">{name || '—'}</b></div>
 			<button
 				onclick={() => (nameGate = true)}
-				class="text-[11px] tracking-widest font-bold active:scale-95 transition"
+				class="press text-[11px] tracking-widest font-bold"
 				style="color:#5b8cff">CHANGE</button
 			>
 		</div>
 
 		<!-- chosen draft -->
-		<a href="/" class="flex items-center gap-3 rounded-xl p-2.5" style="background:#0e0e18;border:1px solid #23233a">
+		<a href="/" class="tile flex items-center gap-3 rounded-xl p-2.5" style="background:#0e0e18;border:1px solid #23233a;--glow:{CAT_HUE[draft.category]}">
 			<div
 				class="w-11 h-11 rounded-lg shrink-0"
 				style="background:linear-gradient(135deg,{CAT_HUE[draft.category]},#0e0e18)"
@@ -152,13 +156,13 @@
 				<div class="grid grid-cols-2 gap-1 p-1 rounded-xl" style="background:#0e0e18;border:1px solid #23233a">
 					<button
 						onclick={() => (timerUnlimited = true)}
-						class="py-2 rounded-lg text-sm font-bold transition active:scale-95"
+						class="chip py-2 rounded-lg text-sm font-bold"
 						style={timerUnlimited ? 'background:#5b8cff;color:#0b0b12;font-style:italic' : 'color:rgba(255,255,255,.55)'}
 						>∞ None</button
 					>
 					<button
 						onclick={() => (timerUnlimited = false)}
-						class="py-2 rounded-lg text-sm font-bold transition active:scale-95"
+						class="chip py-2 rounded-lg text-sm font-bold"
 						style={!timerUnlimited ? 'background:#5b8cff;color:#0b0b12;font-style:italic' : 'color:rgba(255,255,255,.55)'}
 						>Timed</button
 					>
@@ -167,7 +171,7 @@
 					<div
 						class="flex items-center rounded-xl px-2 mt-1"
 						style="background:#0e0e18;border:1px solid #23233a"
-						transition:fly={{ y: -6, duration: 150 }}
+						transition:fly={{ y: -6, duration: motionOK() ? 150 : 0 }}
 					>
 						<input
 							type="number"
@@ -192,14 +196,14 @@
 			<div class="grid grid-cols-2 gap-2">
 				<button
 					onclick={() => (spotsMode = 'fixed')}
-					class="rounded-xl py-2.5 transition active:scale-95 text-white"
+					class="chip rounded-xl py-2.5 text-white"
 					style={spotsMode === 'fixed'
 						? 'background:#5b8cff;color:#0b0b12;font-weight:900;font-style:italic'
 						: 'background:#0e0e18;border:1px solid #23233a'}>Fixed</button
 				>
 				<button
 					onclick={() => (spotsMode = 'unlimited')}
-					class="rounded-xl py-2.5 transition active:scale-95 text-white"
+					class="chip rounded-xl py-2.5 text-white"
 					style={spotsMode === 'unlimited'
 						? 'background:#5b8cff;color:#0b0b12;font-weight:900;font-style:italic'
 						: 'background:#0e0e18;border:1px solid #23233a'}>Unlimited</button
@@ -210,14 +214,14 @@
 					<button
 						onclick={() => (spots = clamp(spots - 1, 1, 20))}
 						aria-label="Fewer spots"
-						class="w-9 h-9 rounded-lg text-lg font-bold active:scale-90 transition text-white"
+						class="press w-9 h-9 rounded-lg text-lg font-bold text-white"
 						style="background:#0e0e18;border:1px solid #23233a">−</button
 					>
 					<div class="text-2xl font-bold w-8 text-center text-white" style="font-style:italic">{spots}</div>
 					<button
 						onclick={() => (spots = clamp(spots + 1, 1, 20))}
 						aria-label="More spots"
-						class="w-9 h-9 rounded-lg text-lg font-bold active:scale-90 transition text-white"
+						class="press w-9 h-9 rounded-lg text-lg font-bold text-white"
 						style="background:#0e0e18;border:1px solid #23233a">+</button
 					>
 					<span class="text-[12px] text-white/40">each · <b class="text-white/70">{rounds} rounds</b> total</span>
@@ -226,14 +230,14 @@
 					<button
 						onclick={() => (roundsValue = clamp(roundsValue - 1, count, 200))}
 						aria-label="Fewer rounds"
-						class="w-9 h-9 rounded-lg text-lg font-bold active:scale-90 transition text-white"
+						class="press w-9 h-9 rounded-lg text-lg font-bold text-white"
 						style="background:#0e0e18;border:1px solid #23233a">−</button
 					>
 					<div class="text-2xl font-bold w-10 text-center text-white" style="font-style:italic">{roundsValue}</div>
 					<button
 						onclick={() => (roundsValue = clamp(roundsValue + 1, count, 200))}
 						aria-label="More rounds"
-						class="w-9 h-9 rounded-lg text-lg font-bold active:scale-90 transition text-white"
+						class="press w-9 h-9 rounded-lg text-lg font-bold text-white"
 						style="background:#0e0e18;border:1px solid #23233a">+</button
 					>
 					<span class="text-[12px] text-white/40">rounds cap</span>
@@ -247,7 +251,7 @@
 			<div class="grid grid-cols-2 gap-2">
 				<button
 					onclick={() => (mode = 'live')}
-					class="rounded-xl py-3 text-center transition active:scale-95 text-white"
+					class="chip rounded-xl py-3 text-center text-white"
 					style={mode === 'live' ? 'background:#5b8cff;color:#0b0b12' : 'background:#0e0e18;border:1px solid #23233a'}
 				>
 					<div style="font-weight:900;font-style:italic;font-size:18px">Live</div>
@@ -255,7 +259,7 @@
 				</button>
 				<button
 					onclick={() => (mode = 'silent')}
-					class="rounded-xl py-3 text-center transition active:scale-95 text-white"
+					class="chip rounded-xl py-3 text-center text-white"
 					style={mode === 'silent' ? 'background:#5b8cff;color:#0b0b12' : 'background:#0e0e18;border:1px solid #23233a'}
 				>
 					<div style="font-weight:900;font-style:italic;font-size:18px">Silent</div>
@@ -265,13 +269,13 @@
 		</div>
 
 		{#if mode === 'silent'}
-			<div transition:fly={{ y: -8, duration: 200 }}>
+			<div transition:fly={{ y: -8, duration: motionOK() ? 200 : 0 }}>
 				<div class="text-[10px] tracking-[0.3em] text-white/40 mb-2">IF SILENT BIDS TIE</div>
 				<div class="flex flex-wrap gap-2">
 					{#each ties as [key, label]}
 						<button
 							onclick={() => (tie = key)}
-							class="px-3 py-2 rounded-lg text-sm font-bold transition active:scale-95"
+							class="chip px-3 py-2 rounded-lg text-sm font-bold"
 							style={tie === key
 								? 'background:#ff5f4d;color:#fff'
 								: 'background:#0e0e18;border:1px solid #23233a;color:rgba(255,255,255,.6)'}>{label}</button

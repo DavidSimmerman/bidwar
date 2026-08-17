@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { flip } from 'svelte/animate';
+	import { fly, scale } from 'svelte/transition';
 	import { CATEGORIES, CAT_HUE, LIMITS, type Category } from '$lib/drafts';
 
 	let title = $state('');
@@ -18,19 +19,33 @@
 
 	onMount(() => (author = localStorage.getItem('bw_name') ?? ''));
 
+	// Svelte transitions aren't covered by the CSS reduced-motion block — gate them here.
+	const motionOK = () =>
+		typeof matchMedia === 'undefined' || !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 	const norm = (s: string) => s.trim().slice(0, LIMITS.item);
 	const dupe = (s: string) => items.some((i) => i.toLowerCase() === s.toLowerCase());
 	const ready = $derived(title.trim().length > 0 && items.length >= LIMITS.minItems);
+
+	// bumped on every rejection so the input can replay its shake. The re-key
+	// remounts the input, so put the caret back where the user left it.
+	let rejects = $state(0);
+	async function reject(msg: string) {
+		err = msg;
+		rejects++;
+		await tick();
+		entryEl?.focus();
+	}
 
 	async function add() {
 		const v = norm(entry);
 		if (!v) return;
 		if (dupe(v)) {
-			err = `“${v}” is already in there`;
+			reject(`“${v}” is already in there`);
 			return;
 		}
 		if (items.length >= LIMITS.maxItems) {
-			err = `${LIMITS.maxItems} items max`;
+			reject(`${LIMITS.maxItems} items max`);
 			return;
 		}
 		items = [...items, v];
@@ -89,8 +104,8 @@
 	<div class="w-full max-w-[440px] lg:max-w-[980px] mx-auto px-4 lg:px-8 pb-10">
 		<div class="pt-6 pb-4 lg:pt-10 lg:pb-8 flex items-center justify-between">
 			<div>
-				<div class="text-[10px] tracking-[0.4em] text-white/40 lg:text-[12px]">CREATE A</div>
-				<div style="font-style:italic;font-weight:900;line-height:1" class="text-white text-[30px] lg:text-[56px]">
+				<div class="text-[10px] tracking-[0.4em] text-white/40 lg:text-[12px] smash-in">CREATE A</div>
+				<div style="font-style:italic;font-weight:900;line-height:1;animation-delay:.06s" class="text-white text-[30px] lg:text-[56px] smash-in">
 					DRAFT
 				</div>
 			</div>
@@ -134,7 +149,7 @@
 				<button
 					onclick={() => (category = c)}
 					aria-pressed={category === c}
-					class="rounded-lg px-2.5 py-1.5 text-[11px] font-bold transition active:scale-95"
+					class="chip rounded-lg px-2.5 py-1.5 text-[11px] font-bold"
 					style={category === c
 						? `background:${CAT_HUE[c]};color:#0b0b12`
 						: 'background:#0e0e18;border:1px solid #23233a;color:rgba(255,255,255,.5)'}>{c}</button
@@ -163,34 +178,39 @@
 			></textarea>
 			<button
 				onclick={addBulk}
-				class="w-full mt-2 py-2 rounded-xl text-[12px] font-bold active:scale-95 transition"
+				class="press w-full mt-2 py-2 rounded-xl text-[12px] font-bold"
 				style="background:#16162a;color:#fff">ADD ALL</button
 			>
 		{:else}
-			<div class="flex gap-2 mt-1.5">
-				<input
-					bind:this={entryEl}
-					bind:value={entry}
-					onkeydown={(e) => e.key === 'Enter' && add()}
-					maxlength={LIMITS.item}
-					placeholder="Add an item…"
-					aria-label="Add an item"
-					class="flex-1 rounded-xl px-3 py-2.5 text-[14px] outline-none"
-					style="background:#0e0e18;border:1px solid #23233a;color:#fff"
-				/>
-				<button
-					onclick={add}
-					aria-label="Add item"
-					class="w-11 shrink-0 rounded-xl text-xl font-black active:scale-90 transition"
-					style="background:#5b8cff;color:#0b0b12">+</button
-				>
-			</div>
+			<!-- re-keyed on each rejection so a dupe or the cap replays the shake -->
+			{#key rejects}
+				<div class="flex gap-2 mt-1.5 {rejects ? 'shake' : ''}">
+					<input
+						bind:this={entryEl}
+						bind:value={entry}
+						onkeydown={(e) => e.key === 'Enter' && add()}
+						maxlength={LIMITS.item}
+						placeholder="Add an item…"
+						aria-label="Add an item"
+						class="flex-1 rounded-xl px-3 py-2.5 text-[14px] outline-none"
+						style="background:#0e0e18;border:1px solid #23233a;color:#fff"
+					/>
+					<button
+						onclick={add}
+						aria-label="Add item"
+						class="press w-11 shrink-0 rounded-xl text-xl font-black"
+						style="background:#5b8cff;color:#0b0b12">+</button
+					>
+				</div>
+			{/key}
 		{/if}
 
 		<div bind:this={listEl} class="mt-2 space-y-1.5 max-h-[280px] lg:max-h-[440px] overflow-y-auto pr-1">
 			{#each items as it, i (it)}
 				<div
-					animate:flip={{ duration: 160 }}
+					animate:flip={{ duration: motionOK() ? 160 : 0 }}
+					in:fly={{ x: -24, duration: motionOK() ? 260 : 0, opacity: 0 }}
+					out:scale={{ start: 0.85, duration: motionOK() ? 140 : 0, opacity: 0 }}
 					class="flex items-center gap-2 rounded-lg px-2.5 py-2"
 					style="background:#0e0e18;border:1px solid #23233a"
 				>
@@ -200,18 +220,18 @@
 						onclick={() => move(i, -1)}
 						disabled={i === 0}
 						aria-label="Move {it} up"
-						class="px-1 text-white/25 hover:text-white disabled:opacity-20 active:scale-90">▲</button
+						class="press px-1 text-white/25 hover:text-white disabled:opacity-20">▲</button
 					>
 					<button
 						onclick={() => move(i, 1)}
 						disabled={i === items.length - 1}
 						aria-label="Move {it} down"
-						class="px-1 text-white/25 hover:text-white disabled:opacity-20 active:scale-90">▼</button
+						class="press px-1 text-white/25 hover:text-white disabled:opacity-20">▼</button
 					>
 					<button
 						onclick={() => remove(i)}
 						aria-label="Remove {it}"
-						class="px-1 text-white/25 hover:text-white active:scale-90">✕</button
+						class="press px-1 text-white/25 hover:text-white">✕</button
 					>
 				</div>
 			{/each}
@@ -221,15 +241,20 @@
 			{items.length} / {LIMITS.maxItems} · need at least {LIMITS.minItems}
 		</div>
 
-		{#if err}<div class="text-[12px] text-center mt-2" style="color:#ff5f4d">{err}</div>{/if}
+		{#if err}
+			{#key err}<div class="text-[12px] text-center mt-2 shake" style="color:#ff5f4d">{err}</div>{/key}
+		{/if}
 
-		<button
-			onclick={publish}
-			disabled={!ready || saving}
-			class="press w-full mt-4 py-4 rounded-xl text-lg disabled:opacity-40"
-			style="background:#5b8cff;color:#0b0b12;font-weight:900;font-style:italic"
-			>{saving ? 'PUBLISHING…' : 'PUBLISH'}</button
-		>
+		<!-- re-keyed on `ready` so the button punches to life the moment it unlocks -->
+		{#key ready}
+			<button
+				onclick={publish}
+				disabled={!ready || saving}
+				class="press w-full mt-4 py-4 rounded-xl text-lg disabled:opacity-40 {ready ? 'punch' : ''}"
+				style="background:#5b8cff;color:#0b0b12;font-weight:900;font-style:italic"
+				>{saving ? 'PUBLISHING…' : 'PUBLISH'}</button
+			>
+		{/key}
 		<div class="text-center text-[11px] text-white/25 mt-2">
 			Published as <b class="text-white/50">{author || 'you'}</b> · anyone can play it
 		</div>
