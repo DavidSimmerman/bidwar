@@ -112,22 +112,28 @@
 			<a href="/" class="text-[11px] tracking-widest font-bold lg:text-[13px]" style="color:#5b8cff">‹ MARKET</a>
 		</div>
 
-		<!-- Desktop: details on the left, the item list gets its own column on the right. -->
+		<!-- Desktop: details on the left, the item list gets its own column on the right.
+		     `stagger` slams each column's blocks in on arrival. -->
 		<div class="lg:grid lg:grid-cols-2 lg:gap-10 lg:items-start">
-		<div>
-		<!-- live preview of the market tile -->
+		<div class="stagger">
+		<!-- live preview of the market tile — punches whenever you switch category -->
 		<div class="flex items-center gap-3 mb-5">
-			<div class="w-[120px] rounded-xl overflow-hidden shrink-0" style="background:#0e0e18;border:1px solid #23233a">
+			{#key category}
 				<div
-					class="h-[62px] p-2 flex items-end"
-					style="background:linear-gradient(140deg,{CAT_HUE[category]}dd,{CAT_HUE[category]}22)"
+					class="tile punch w-[120px] rounded-xl overflow-hidden shrink-0"
+					style="background:#0e0e18;border:1px solid #23233a;--glow:{CAT_HUE[category]}"
 				>
-					<div style="font-style:italic;font-weight:900;font-size:12px;line-height:1.05" class="text-white drop-shadow">
-						{title || 'Untitled'}
+					<div
+						class="h-[62px] p-2 flex items-end"
+						style="background:linear-gradient(140deg,{CAT_HUE[category]}dd,{CAT_HUE[category]}22)"
+					>
+						<div style="font-style:italic;font-weight:900;font-size:12px;line-height:1.05" class="text-white drop-shadow">
+							{title || 'Untitled'}
+						</div>
 					</div>
+					<div class="p-1.5 text-[9px] text-white/35">{items.length} items · by {author || 'you'}</div>
 				</div>
-				<div class="p-1.5 text-[9px] text-white/35">{items.length} items · by {author || 'you'}</div>
-			</div>
+			{/key}
 			<div class="text-[11px] text-white/30 leading-snug">Live preview —<br />your tile in the market.</div>
 		</div>
 
@@ -159,7 +165,7 @@
 		</div>
 
 		<!-- items -->
-		<div>
+		<div class="stagger">
 		<div class="flex items-baseline justify-between">
 			<div class="text-[10px] tracking-[0.3em] text-white/40">ITEMS</div>
 			<button onclick={() => (bulk = !bulk)} class="text-[10px] font-bold" style="color:#5b8cff"

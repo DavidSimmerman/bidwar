@@ -158,5 +158,12 @@
 	@media (prefers-reduced-motion: reduce) {
 		.c2 { animation: none; }
 		.p, .flash, .spinner-wrap { display: none; }
+		/* restIn fades 0→1 over 1.2s; without this the hero stays blank for half a
+		   second for someone who asked for no motion. Base opacity is 1, so killing
+		   the animation shows it immediately. Must match the .cN .resting
+		   specificity above, or this rule silently loses. */
+		.c2 .resting,
+		.c3 .resting,
+		.c4 .resting { animation: none; }
 	}
 </style>

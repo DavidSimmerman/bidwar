@@ -276,7 +276,8 @@
 							<div class="text-center text-[11px] text-white/40 tracking-widest">you open — bid at least $1</div>
 						{/if}
 					{:else}
-						<div class="text-center py-4 text-white/40 text-sm tracking-widest">waiting for {v.players.find(p => p.id === v.round.turnId)?.name ?? 'others'}…</div>
+						<!-- narrowing on `v` doesn't survive into the closure, hence the ?. -->
+						<div class="text-center py-4 text-white/40 text-sm tracking-widest">waiting for {v.players.find(p => p.id === v?.round?.turnId)?.name ?? 'others'}…</div>
 					{/if}
 				{:else}
 					<!-- silent -->
