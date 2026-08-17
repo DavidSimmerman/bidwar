@@ -68,7 +68,7 @@
 
 <div class="min-h-screen flex flex-col" style="background:#0a0a0c; font-family:'Archivo',sans-serif">
 	<!-- HERO — animated split, replays when player count changes -->
-	<div class="relative h-[300px] shrink-0 overflow-hidden">
+	<div class="relative h-[300px] lg:h-[380px] shrink-0 overflow-hidden">
 		{#key count}
 			<SplitBackground {count} colors={PALETTE.slice(0, count)} preview />
 		{/key}
@@ -77,11 +77,14 @@
 			style="background:linear-gradient(180deg,rgba(10,10,12,.15),rgba(10,10,12,.55))"
 		>
 			<div class="text-center px-6">
-				<div class="text-[11px] tracking-[0.5em] text-white/70">BIDDING OVER</div>
-				<div style="font-style:italic;font-weight:900;font-size:40px;line-height:1.05" class="text-white drop-shadow-lg smash-in">
+				<div class="text-[11px] tracking-[0.5em] text-white/70 lg:text-[13px]">BIDDING OVER</div>
+				<div
+					style="font-style:italic;font-weight:900;line-height:1.05"
+					class="text-white drop-shadow-lg smash-in text-[40px] lg:text-[68px]"
+				>
 					{draft.title}
 				</div>
-				<div class="text-[11px] text-white/60 mt-1">{draft.items.length} items · by {draft.author}</div>
+				<div class="text-[11px] text-white/60 mt-1 lg:text-[13px]">{draft.items.length} items · by {draft.author}</div>
 			</div>
 			<div class="flex gap-2 stagger">
 				{#each [2, 3, 4] as n}
@@ -104,7 +107,7 @@
 	</div>
 
 	<!-- FORM -->
-	<div class="flex-1 w-full max-w-[440px] mx-auto px-5 py-6 space-y-5 stagger">
+	<div class="flex-1 w-full max-w-[440px] lg:max-w-[560px] mx-auto px-5 py-6 lg:py-9 space-y-5 stagger">
 		<div class="flex items-center justify-between">
 			<div class="text-sm text-white/60">Playing as <b class="text-white" style="font-style:italic">{name || '—'}</b></div>
 			<button

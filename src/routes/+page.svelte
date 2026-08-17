@@ -52,75 +52,88 @@
 </script>
 
 <div class="min-h-screen" style="background:#0a0a0c; font-family:'Archivo',sans-serif">
-	<div class="w-full max-w-[440px] mx-auto px-4 pb-10">
+	<!-- max-w must grow with the column count, or md's 3 columns get squeezed into the phone width -->
+	<div class="w-full max-w-[440px] md:max-w-[720px] lg:max-w-[1180px] 2xl:max-w-[1500px] mx-auto px-4 lg:px-8 pb-10">
 		<!-- header -->
-		<div class="flex items-end justify-between pt-6 pb-3">
+		<div class="flex items-end justify-between pt-6 pb-3 lg:pt-10 lg:pb-6">
 			<div>
-				<div class="text-[10px] tracking-[0.4em] text-white/40">PICK YOUR</div>
-				<div style="font-style:italic;font-weight:900;font-size:34px;line-height:1" class="text-white">DRAFT</div>
+				<div class="text-[10px] tracking-[0.4em] text-white/40 lg:text-[12px]">PICK YOUR</div>
+				<div
+					style="font-style:italic;font-weight:900;line-height:1"
+					class="text-white text-[34px] lg:text-[64px]"
+				>
+					DRAFT
+				</div>
 			</div>
 			<a
 				href="/new"
-				class="press rounded-xl px-3 py-2 text-[12px]"
+				class="press rounded-xl px-3 py-2 text-[12px] lg:px-5 lg:py-3 lg:text-[15px]"
 				style="background:#5b8cff;color:#0b0b12;font-weight:900;font-style:italic">+ NEW</a
 			>
 		</div>
 
-		<!-- search (native GET form: no JS needed) -->
-		<form data-sveltekit-keepfocus class="pb-3">
-			{#if data.category}<input type="hidden" name="category" value={data.category} />{/if}
-			{#if data.sort !== 'popular'}<input type="hidden" name="sort" value={data.sort} />{/if}
-			<input
-				name="q"
-				value={data.q}
-				placeholder="Search drafts…"
-				aria-label="Search drafts"
-				class="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-				style="background:#0e0e18;border:1px solid #23233a;color:#fff"
-			/>
-		</form>
+		<!-- Desktop splits into sidebar + grid; mobile keeps everything stacked. -->
+		<div class="lg:grid lg:grid-cols-[190px_1fr] lg:gap-8 lg:items-start">
+			<!-- filters: scrolling chip rows on mobile, a sticky rail on desktop -->
+			<div class="lg:sticky lg:top-6">
+				<!-- search (native GET form: no JS needed) -->
+				<form data-sveltekit-keepfocus class="pb-3">
+					{#if data.category}<input type="hidden" name="category" value={data.category} />{/if}
+					{#if data.sort !== 'popular'}<input type="hidden" name="sort" value={data.sort} />{/if}
+					<input
+						name="q"
+						value={data.q}
+						placeholder="Search drafts…"
+						aria-label="Search drafts"
+						class="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+						style="background:#0e0e18;border:1px solid #23233a;color:#fff"
+					/>
+				</form>
 
-		<!-- categories -->
-		<div class="flex gap-1.5 overflow-x-auto pb-2 -mx-4 px-4">
-			<a
-				href={href({ category: null })}
-				class="shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-bold whitespace-nowrap transition active:scale-95"
-				style={!data.category
-					? 'background:#fff;color:#0b0b12'
-					: 'background:#0e0e18;border:1px solid #23233a;color:rgba(255,255,255,.55)'}>All</a
-			>
-			{#each CATEGORIES as c}
-				<a
-					href={href({ category: c })}
-					class="shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-bold whitespace-nowrap transition active:scale-95"
-					style={data.category === c
-						? `background:${CAT_HUE[c]};color:#0b0b12`
-						: 'background:#0e0e18;border:1px solid #23233a;color:rgba(255,255,255,.55)'}>{c}</a
-				>
-			{/each}
-		</div>
-
-		<!-- sort -->
-		<div class="flex items-center justify-between pb-3">
-			<div class="flex gap-1.5">
-				{#each SORTS as [key, label]}
+				<!-- categories -->
+				<div class="hidden lg:block text-[10px] tracking-[0.3em] text-white/30 pb-2 pt-2">CATEGORY</div>
+				<div class="flex gap-1.5 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:flex-col lg:overflow-visible">
 					<a
-						href={href({ sort: key })}
-						class="rounded-lg px-2 py-1 text-[10px] font-bold transition active:scale-95"
-						style={data.sort === key ? 'background:#fff;color:#0b0b12' : 'color:rgba(255,255,255,.4)'}>{label}</a
+						href={href({ category: null })}
+						class="shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-bold whitespace-nowrap transition active:scale-95 lg:text-[13px] lg:py-2"
+						style={!data.category
+							? 'background:#fff;color:#0b0b12'
+							: 'background:#0e0e18;border:1px solid #23233a;color:rgba(255,255,255,.55)'}>All</a
 					>
-				{/each}
-			</div>
-			<div class="text-[10px] text-white/25">{drafts.length} draft{drafts.length === 1 ? '' : 's'}</div>
-		</div>
+					{#each CATEGORIES as c}
+						<a
+							href={href({ category: c })}
+							class="shrink-0 rounded-lg px-2.5 py-1.5 text-[11px] font-bold whitespace-nowrap transition active:scale-95 lg:text-[13px] lg:py-2"
+							style={data.category === c
+								? `background:${CAT_HUE[c]};color:#0b0b12`
+								: 'background:#0e0e18;border:1px solid #23233a;color:rgba(255,255,255,.55)'}>{c}</a
+						>
+					{/each}
+				</div>
 
-		<!-- grid -->
-		<div class="grid grid-cols-2 gap-3">
+				<!-- sort -->
+				<div class="hidden lg:block text-[10px] tracking-[0.3em] text-white/30 pb-2 pt-5">SORT</div>
+				<div class="flex items-center justify-between pb-3 lg:flex-col lg:items-stretch lg:gap-1">
+					<div class="flex gap-1.5 lg:flex-col">
+						{#each SORTS as [key, label]}
+							<a
+								href={href({ sort: key })}
+								class="rounded-lg px-2 py-1 text-[10px] font-bold transition active:scale-95 lg:text-[13px] lg:px-2.5 lg:py-2"
+								style={data.sort === key ? 'background:#fff;color:#0b0b12' : 'color:rgba(255,255,255,.4)'}>{label}</a
+							>
+						{/each}
+					</div>
+					<div class="text-[10px] text-white/25 lg:pt-4">{drafts.length} draft{drafts.length === 1 ? '' : 's'}</div>
+				</div>
+			</div>
+
+			<!-- grid -->
+			<div class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 lg:gap-5">
 			{#each drafts as d (d.id)}
 				<div class="rounded-xl overflow-hidden" style="background:#0e0e18;border:1px solid #23233a">
 					<a href="/setup/{d.id}" class="block">
 						<div
-							class="h-[76px] p-2.5 flex items-end relative"
+							class="h-[76px] lg:h-[112px] p-2.5 lg:p-3.5 flex items-end relative"
 							style="background:linear-gradient(140deg,{CAT_HUE[d.category]}dd,{CAT_HUE[d.category]}22)"
 						>
 							<div
@@ -129,7 +142,10 @@
 							>
 								{d.items.length}
 							</div>
-							<div style="font-style:italic;font-weight:900;font-size:15px;line-height:1.05" class="text-white drop-shadow">
+							<div
+								style="font-style:italic;font-weight:900;line-height:1.05"
+								class="text-white drop-shadow text-[15px] lg:text-[19px]"
+							>
 								{d.title}
 							</div>
 						</div>
@@ -170,15 +186,16 @@
 						</div>
 					</div>
 				</div>
-			{/each}
-		</div>
+				{/each}
 
-		{#if !drafts.length}
-			<div class="text-center py-14 text-[13px] text-white/30">
-				Nothing here yet —
-				<a href="/new" style="color:#5b8cff" class="font-bold">make the first one</a>
-			</div>
-		{/if}
+					{#if !drafts.length}
+						<div class="col-span-full text-center py-14 text-[13px] text-white/30">
+							Nothing here yet —
+							<a href="/new" style="color:#5b8cff" class="font-bold">make the first one</a>
+						</div>
+					{/if}
+				</div>
+		</div>
 	</div>
 </div>
 

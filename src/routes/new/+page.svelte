@@ -86,15 +86,20 @@
 </script>
 
 <div class="min-h-screen" style="background:#0a0a0c; font-family:'Archivo',sans-serif">
-	<div class="w-full max-w-[440px] mx-auto px-4 pb-10">
-		<div class="pt-6 pb-4 flex items-center justify-between">
+	<div class="w-full max-w-[440px] lg:max-w-[980px] mx-auto px-4 lg:px-8 pb-10">
+		<div class="pt-6 pb-4 lg:pt-10 lg:pb-8 flex items-center justify-between">
 			<div>
-				<div class="text-[10px] tracking-[0.4em] text-white/40">CREATE A</div>
-				<div style="font-style:italic;font-weight:900;font-size:30px;line-height:1" class="text-white">DRAFT</div>
+				<div class="text-[10px] tracking-[0.4em] text-white/40 lg:text-[12px]">CREATE A</div>
+				<div style="font-style:italic;font-weight:900;line-height:1" class="text-white text-[30px] lg:text-[56px]">
+					DRAFT
+				</div>
 			</div>
-			<a href="/" class="text-[11px] tracking-widest font-bold" style="color:#5b8cff">‹ MARKET</a>
+			<a href="/" class="text-[11px] tracking-widest font-bold lg:text-[13px]" style="color:#5b8cff">‹ MARKET</a>
 		</div>
 
+		<!-- Desktop: details on the left, the item list gets its own column on the right. -->
+		<div class="lg:grid lg:grid-cols-2 lg:gap-10 lg:items-start">
+		<div>
 		<!-- live preview of the market tile -->
 		<div class="flex items-center gap-3 mb-5">
 			<div class="w-[120px] rounded-xl overflow-hidden shrink-0" style="background:#0e0e18;border:1px solid #23233a">
@@ -136,8 +141,10 @@
 				>
 			{/each}
 		</div>
+		</div>
 
 		<!-- items -->
+		<div>
 		<div class="flex items-baseline justify-between">
 			<div class="text-[10px] tracking-[0.3em] text-white/40">ITEMS</div>
 			<button onclick={() => (bulk = !bulk)} class="text-[10px] font-bold" style="color:#5b8cff"
@@ -180,7 +187,7 @@
 			</div>
 		{/if}
 
-		<div bind:this={listEl} class="mt-2 space-y-1.5 max-h-[280px] overflow-y-auto pr-1">
+		<div bind:this={listEl} class="mt-2 space-y-1.5 max-h-[280px] lg:max-h-[440px] overflow-y-auto pr-1">
 			{#each items as it, i (it)}
 				<div
 					animate:flip={{ duration: 160 }}
@@ -225,6 +232,8 @@
 		>
 		<div class="text-center text-[11px] text-white/25 mt-2">
 			Published as <b class="text-white/50">{author || 'you'}</b> · anyone can play it
+		</div>
+		</div>
 		</div>
 	</div>
 </div>
