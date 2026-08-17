@@ -25,3 +25,6 @@ vite.config.ts.timestamp-*
 # local game db
 bidwar.db*
 .claude/
+
+# handover clips for the Mac, not source
+motion/
