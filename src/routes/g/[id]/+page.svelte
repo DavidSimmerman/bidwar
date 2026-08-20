@@ -192,7 +192,7 @@
 							</div>
 							<ol class="mt-1.5 space-y-1">
 								{#each p.squad as s, i}
-									<li class="smash-left flex items-baseline gap-2 text-[12px]" style="animation-delay:{i * 0.035}s">
+									<li class="smash-left flex items-baseline gap-2 text-[14px]" style="animation-delay:{i * 0.035}s">
 										<span class="tabular-nums w-4 shrink-0 text-[13px] font-bold text-white">{i + 1}</span>
 										<span class="flex-1" style="color:{p.color}">{s.item}</span>
 										<span class="tabular-nums shrink-0 text-[11px] text-white/40">${s.price}</span>
@@ -249,7 +249,7 @@
 					</div>
 				{/if}
 				<div class="mt-3 text-[11px] tracking-widest {v.round.yourTurn ? 'text-white' : 'text-white/40'}">
-					{#if v.round.solo && v.round.yourTurn}TAKE IT OR PASS{:else if v.round.yourTurn}YOUR MOVE{:else}{v.round.mode === 'silent' ? 'SEAL YOUR BID' : 'WAITING…'}{/if} — {fmt(msLeft)}
+					{#if v.round.solo && v.round.yourTurn}{v.round.mustTake ? 'IT’S YOURS' : 'TAKE IT OR PASS'}{:else if v.round.yourTurn}YOUR MOVE{:else}{v.round.mode === 'silent' ? 'SEAL YOUR BID' : 'WAITING…'}{/if} — {fmt(msLeft)}
 				</div>
 			</div>
 
@@ -257,10 +257,18 @@
 			<div class="pb-4 space-y-2">
 				{#if v.round.solo}
 					{#if v.round.yourTurn}
-						<div class="grid grid-cols-2 gap-2">
-							<button onclick={take} class="press py-4 rounded-lg font-bold" style="background:{me?.color ?? '#5b8cff'};color:#0b0b12;font-style:italic;font-weight:900" disabled={(me?.budget ?? 0) < 1}>TAKE · $1</button>
-							<button onclick={pass} class="py-4 rounded-lg font-bold text-white/70" style="background:rgba(255,255,255,.08)">PASS IT ON</button>
-						</div>
+						{#if v.round.mustTake}
+							<!-- nobody else needs anyone: tossing this strands your squad short, so no PASS -->
+							<button onclick={take} class="press w-full py-4 rounded-lg font-bold" style="background:{me?.color ?? '#5b8cff'};color:#0b0b12;font-style:italic;font-weight:900" disabled={(me?.budget ?? 0) < 1}>TAKE · $1</button>
+							<div class="text-center text-[11px] text-white/40 tracking-widest">
+								only you have room left — {(v.rules.spots ?? 0) - (me?.squad.length ?? 0)} to fill, so this one's yours
+							</div>
+						{:else}
+							<div class="grid grid-cols-2 gap-2">
+								<button onclick={take} class="press py-4 rounded-lg font-bold" style="background:{me?.color ?? '#5b8cff'};color:#0b0b12;font-style:italic;font-weight:900" disabled={(me?.budget ?? 0) < 1}>TAKE · $1</button>
+								<button onclick={pass} class="py-4 rounded-lg font-bold text-white/70" style="background:rgba(255,255,255,.08)">PASS IT ON</button>
+							</div>
+						{/if}
 					{:else}
 						<div class="text-center py-4 text-white/40 text-sm tracking-widest">{v.round.leaderName ?? 'A player'} is deciding…</div>
 					{/if}
@@ -334,7 +342,7 @@
 					<div class="flex justify-between"><span style="font-style:italic;font-weight:900;color:{p.color}">{p.name}</span><span class="text-[11px] text-white/40">${p.budget} · {p.squad.length}{v.rules.spots != null ? `/${v.rules.spots}` : ''}</span></div>
 					<ol class="mt-1 space-y-1">
 						{#each p.squad as s, i}
-							<li class="smash-left flex items-baseline gap-2 text-[12px]" style="animation-delay:{i * 0.035}s">
+							<li class="smash-left flex items-baseline gap-2 text-[14px]" style="animation-delay:{i * 0.035}s">
 								<span class="tabular-nums w-4 shrink-0 text-[13px] font-bold text-white">{i + 1}</span>
 								<span class="flex-1" style="color:{p.color}">{s.item}</span>
 								<span class="tabular-nums shrink-0 text-[11px] text-white/40">${s.price}</span>
@@ -343,7 +351,7 @@
 						<!-- fixed squad size: show what's still open, so the board reads as a sheet to fill -->
 						{#if v.rules.spots != null}
 							{#each Array(Math.max(0, v.rules.spots - p.squad.length)) as _, i}
-								<li class="flex items-baseline gap-2 text-[12px] text-white/25">
+								<li class="flex items-baseline gap-2 text-[14px] text-white/25">
 									<span class="tabular-nums w-4 shrink-0 text-[13px] font-bold text-white/25">{p.squad.length + i + 1}</span>
 									<span class="flex-1">open</span>
 								</li>

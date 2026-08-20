@@ -4,6 +4,8 @@
 //  • Eligible to bid = budget ≥ $1 AND an open squad spot.
 //  • ≥2 eligible → auction (live or silent). Opener (rotates) must bid ≥$1; others may pass.
 //  • Exactly 1 eligible → SOLO: they Take-for-$1 or Pass → item dealt round-robin to a needer.
+//    Exception: if nobody else needs anyone and their own squad is short (fixed size), passing
+//    would bin the item and strand them under quota — so they must take it.
 //  • 0 eligible but open spots remain → remaining items dealt one-by-one round-robin to needers.
 //  • Ends when every squad is full, the pool empties, or the rounds cap is hit.
 
@@ -336,9 +338,26 @@ function soloTake(s: GameState, pid: string, now: number) {
 	award(s, pid, r.item, 1, `${p.name} took ${r.item} for $1`, now);
 }
 
-function soloPass(s: GameState, pid: string, now: number) {
+// True when passing would throw the item away while the passer still owes themselves a
+// spot: a fixed-size draft where nobody else needs anyone. Tossing there strands their
+// squad short (4/5 with no way back), so the pass is refused and they must take it.
+function mustTake(s: GameState, pid: string): boolean {
+	const me = byId(s, pid);
+	if (!me || s.rules.spots == null || !hasSpot(s, me)) return false;
+	return needers(s).every((p) => p.id === pid);
+}
+
+function soloPass(s: GameState, pid: string, now: number, auto = false) {
 	const r = s.round!;
 	if (r.turnId !== pid) return;
+	const me = byId(s, pid)!;
+	if (mustTake(s, pid)) {
+		if (!auto) return; // the UI hides PASS in this state; ignore it if it arrives anyway
+		// On the clock we must still resolve, or resolveExpired would spin. Take it at $1,
+		// mirroring the live opener auto-opening rather than letting an item go unsold.
+		if (me.budget >= 1) return soloTake(s, pid, now);
+		// Can't even afford $1 — fall through and toss so the timer never deadlocks.
+	}
 	const others = needers(s).filter((p) => p.id !== pid);
 	if (others.length === 0) return toss(s, r.item, `${r.item} — passed, no takers`, now);
 	const who = others[s.dealPointer % others.length];
@@ -351,7 +370,7 @@ export function resolveExpired(s: GameState, now: number) {
 	let guard = 0;
 	while (s.status === 'active' && s.round && s.round.deadline != null && now > s.round.deadline) {
 		const r = s.round;
-		if (r.solo) soloPass(s, r.turnId!, now);
+		if (r.solo) soloPass(s, r.turnId!, now, true);
 		else if (r.mode === 'live') {
 			if (r.currentBid === 0) raise(s, r.turnId!, 1, now); // opener auto-opens at $1 — a fresh item never goes unsold on the clock
 			else passLive(s, r.turnId!, now, true);
@@ -415,6 +434,7 @@ export function view(s: GameState, playerId: string, now: number) {
 			leaderName: r.leaderId ? byId(s, r.leaderId)!.name : null,
 			turnId: r.turnId,
 			yourTurn: r.turnId === playerId,
+			mustTake: r.solo && r.turnId === playerId && mustTake(s, playerId),
 			canBid: !!me && participants(s).some((p) => p.id === playerId),
 			youSealed: !!me && playerId in r.sealed,
 			sealedCount: Object.keys(r.sealed).length,

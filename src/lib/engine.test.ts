@@ -203,3 +203,49 @@ test('view exposes every squad (draft board) and never leaks sealed amounts', ()
 	assert.equal(v.round?.sealedCount, 1);
 	assert.equal(JSON.stringify(v).includes('"sealed"'), false);
 });
+
+test('fixed draft, last player with an open spot cannot throw the item away', () => {
+	// p1 fills up (spots = 2); p0 is then the only player who still needs anyone.
+	const s = mk({ spots: 2 }, 2);
+	for (let i = 0; i < 2 && s.round; i++) {
+		const t = R(s).turnId!;
+		if (t === 'p1') {
+			act(s, 'p1', { type: 'raise', amount: 1 }, 0);
+			act(s, 'p0', { type: 'pass' }, 0);
+		} else {
+			act(s, 'p0', { type: 'raise', amount: 1 }, 0);
+			act(s, 'p1', { type: 'raise', amount: 2 }, 0);
+			act(s, 'p0', { type: 'pass' }, 0);
+		}
+	}
+	assert.equal(s.players[1].squad.length, 2); // p1 full
+	assert.equal(R(s).solo, true);
+	assert.equal(view(s, 'p0', 0).round?.mustTake, true);
+
+	const item = R(s).item;
+	act(s, 'p0', { type: 'pass' }, 0); // refused — tossing it would strand p0 short
+	assert.equal(R(s).item, item, 'round should not move on');
+	assert.equal(s.players[0].squad.length, 0);
+
+	act(s, 'p0', { type: 'take' }, 0); // taking still works
+	assert.deepEqual(s.players[0].squad.at(-1), { item, price: 1 });
+});
+
+test('fixed draft, sole needer on the clock auto-takes instead of stalling', () => {
+	const s = mk({ spots: 2, timerMs: 1000 }, 2);
+	for (let i = 0; i < 2 && s.round; i++) {
+		const t = R(s).turnId!;
+		if (t === 'p1') {
+			act(s, 'p1', { type: 'raise', amount: 1 }, 0);
+			act(s, 'p0', { type: 'pass' }, 0);
+		} else {
+			act(s, 'p0', { type: 'raise', amount: 1 }, 0);
+			act(s, 'p1', { type: 'raise', amount: 2 }, 0);
+			act(s, 'p0', { type: 'pass' }, 0);
+		}
+	}
+	assert.equal(R(s).solo, true);
+	const item = R(s).item;
+	resolveExpired(s, 999_999); // clock runs out
+	assert.deepEqual(s.players[0].squad.at(-1), { item, price: 1 });
+});
