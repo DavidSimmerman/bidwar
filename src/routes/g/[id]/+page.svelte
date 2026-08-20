@@ -68,7 +68,13 @@
 		if (res.ok) apply(await res.json());
 	}
 
-	const join = () => send({ op: 'join', name: joinName.trim() || 'Player' });
+	const join = () => {
+		// Joining from an invite link is the other place you name yourself, so remember it
+		// here too — otherwise the home page keeps asking. Same 16-char cap as NameGate.
+		const n = joinName.trim().slice(0, 16);
+		if (n) localStorage.setItem('bw_name', n);
+		return send({ op: 'join', name: n || 'Player' });
+	};
 	const startNow = () => send({ op: 'start' });
 	const raise = (amount: number) => send({ op: 'raise', amount });
 	const pass = () => send({ op: 'pass' });
