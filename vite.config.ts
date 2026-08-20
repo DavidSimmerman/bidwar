@@ -2,10 +2,16 @@ import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
-import { sandboxServer } from '/home/claude/sandbox/vite/vite.sandbox.preset';
 
 export default defineConfig({
-	server: sandboxServer(5187),
+	// dev only — prod runs the adapter-node build. wss/443 so HMR survives the tunnel.
+	server: {
+		host: true,
+		port: 5187,
+		strictPort: true,
+		allowedHosts: ['.simmerman.cc'],
+		hmr: { protocol: 'wss', clientPort: 443 }
+	},
 	plugins: [
 		tailwindcss(),
 		sveltekit({
