@@ -201,7 +201,7 @@
 									class="press rounded px-1.5 py-0.5 text-[10px]"
 									style={d.myVote === -1
 										? 'background:#ff5f4d;color:#fff'
-										: 'background:#16162a;color:rgba(255,255,255,.45)'}>👎</button
+										: 'background:#16162a;color:rgba(255,255,255,.45)'}>👎 {k(d.down)}</button
 								>
 							</div>
 						</div>
