@@ -28,7 +28,7 @@ test('live 2p: opener bids, other passes → opener wins and pays', () => {
 	assert.equal(s.lastResult?.winnerId, 'p0');
 	assert.equal(s.lastResult?.price, 5);
 	assert.equal(s.players[0].budget, 15);
-	assert.deepEqual(s.players[0].squad, ['A']);
+	assert.deepEqual(s.players[0].squad, [{ item: 'A', price: 5 }]);
 });
 
 test('live: the opener cannot pass to open (must bid ≥ $1)', () => {
@@ -125,7 +125,7 @@ test('solo: when one bidder is left they can Take for $1', () => {
 	act(s, 'p0', { type: 'take' }, 0);
 	assert.equal(s.lastResult?.item, 'B');
 	assert.equal(s.lastResult?.price, 1);
-	assert.equal(s.players[0].squad.includes('B'), true);
+	assert.deepEqual(s.players[0].squad.find((x) => x.item === 'B'), { item: 'B', price: 1 });
 });
 
 test('solo: Pass hands the item to a player who still needs spots', () => {
@@ -134,7 +134,7 @@ test('solo: Pass hands the item to a player who still needs spots', () => {
 	act(s, 'p1', { type: 'raise', amount: 5 }, 0);
 	act(s, 'p0', { type: 'pass' }, 0); // p1 broke
 	act(s, 'p0', { type: 'pass' }, 0); // solo p0 passes B → dealt to p1 free
-	assert.equal(s.players[1].squad.includes('B'), true);
+	assert.deepEqual(s.players[1].squad.find((x) => x.item === 'B'), { item: 'B', price: 0 }); // dealt free
 	assert.equal(s.lastResult?.winnerId, 'p1');
 	assert.equal(s.lastResult?.price, 0);
 });
@@ -171,7 +171,7 @@ test('dealing: everyone broke with open spots → items handed out round-robin, 
 	assert.equal(s.status, 'over');
 	assert.equal(s.players[0].squad.length, 3);
 	assert.equal(s.players[1].squad.length, 3);
-	assert.equal(s.players[0].squad[0], 'A');
+	assert.equal(s.players[0].squad[0].item, 'A');
 });
 
 test('rounds cap ends the game even with pool/spots left', () => {

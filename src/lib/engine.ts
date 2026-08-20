@@ -21,12 +21,18 @@ export interface Rules {
 	tie: TieRule;
 }
 
+// A won item and what it cost. Items dealt out because nobody could bid cost 0.
+export interface Pick {
+	item: string;
+	price: number;
+}
+
 export interface Player {
 	id: string;
 	name: string;
 	color: string;
 	budget: number;
-	squad: string[];
+	squad: Pick[];
 }
 
 export interface Round {
@@ -159,7 +165,7 @@ function startRound(s: GameState, now: number) {
 			const who = ns[s.dealPointer % ns.length];
 			s.dealPointer++;
 			const item = s.pool.shift()!;
-			who.squad.push(item);
+			who.squad.push({ item, price: 0 });
 			record(s, { item, winnerId: who.id, price: 0, note: `${who.name} is dealt ${item}` });
 			continue;
 		}
@@ -358,7 +364,7 @@ export function resolveExpired(s: GameState, now: number) {
 function award(s: GameState, winnerId: string, item: string, price: number, note: string, now: number) {
 	const p = byId(s, winnerId)!;
 	p.budget -= price;
-	p.squad.push(item);
+	p.squad.push({ item, price });
 	record(s, { item, winnerId, price, note });
 	s.round = null;
 	startRound(s, now);

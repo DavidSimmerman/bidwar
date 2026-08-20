@@ -191,7 +191,7 @@
 									aria-pressed={d.myVote === 1}
 									class="press rounded px-1.5 py-0.5 text-[10px]"
 									style={d.myVote === 1
-										? 'background:#35d07f;color:#0b0b12'
+										? 'background:#1a7f4e;color:#fff'
 										: 'background:#16162a;color:rgba(255,255,255,.45)'}>👍 {k(d.up)}</button
 								>
 								<button
@@ -200,7 +200,7 @@
 									aria-pressed={d.myVote === -1}
 									class="press rounded px-1.5 py-0.5 text-[10px]"
 									style={d.myVote === -1
-										? 'background:#ff5f4d;color:#fff'
+										? 'background:#d63f2e;color:#fff'
 										: 'background:#16162a;color:rgba(255,255,255,.45)'}>👎 {k(d.down)}</button
 								>
 							</div>

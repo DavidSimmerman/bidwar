@@ -193,8 +193,9 @@
 							<ol class="mt-1.5 space-y-1">
 								{#each p.squad as s, i}
 									<li class="smash-left flex items-baseline gap-2 text-[12px]" style="animation-delay:{i * 0.035}s">
-										<span class="tabular-nums text-[10px] text-white/30">{i + 1}</span>
-										<span style="color:{p.color}">{s}</span>
+										<span class="tabular-nums w-4 shrink-0 text-[13px] font-bold text-white">{i + 1}</span>
+										<span class="flex-1" style="color:{p.color}">{s.item}</span>
+										<span class="tabular-nums shrink-0 text-[11px] text-white/40">${s.price}</span>
 									</li>
 								{/each}
 							</ol>
@@ -334,11 +335,22 @@
 					<ol class="mt-1 space-y-1">
 						{#each p.squad as s, i}
 							<li class="smash-left flex items-baseline gap-2 text-[12px]" style="animation-delay:{i * 0.035}s">
-								<span class="tabular-nums text-[10px] text-white/30">{i + 1}</span>
-								<span style="color:{p.color}">{s}</span>
+								<span class="tabular-nums w-4 shrink-0 text-[13px] font-bold text-white">{i + 1}</span>
+								<span class="flex-1" style="color:{p.color}">{s.item}</span>
+								<span class="tabular-nums shrink-0 text-[11px] text-white/40">${s.price}</span>
 							</li>
 						{/each}
-						{#if p.squad.length === 0}<li class="text-[11px] text-white/25">—</li>{/if}
+						<!-- fixed squad size: show what's still open, so the board reads as a sheet to fill -->
+						{#if v.rules.spots != null}
+							{#each Array(Math.max(0, v.rules.spots - p.squad.length)) as _, i}
+								<li class="flex items-baseline gap-2 text-[12px] text-white/25">
+									<span class="tabular-nums w-4 shrink-0 text-[13px] font-bold text-white/25">{p.squad.length + i + 1}</span>
+									<span class="flex-1">open</span>
+								</li>
+							{/each}
+						{:else if p.squad.length === 0}
+							<li class="text-[11px] text-white/25">—</li>
+						{/if}
 					</ol>
 				</div>
 			{/each}

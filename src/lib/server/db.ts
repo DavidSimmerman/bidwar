@@ -34,7 +34,13 @@ const putStmt = db.prepare(
 
 export function loadGame(id: string): GameState | null {
 	const row = getStmt.get(id);
-	return row ? (JSON.parse(row.state) as GameState) : null;
+	if (!row) return null;
+	const s = JSON.parse(row.state) as GameState;
+	// Games saved before squads carried a price stored bare item names. Upgrade them on
+	// read so a game in flight across a deploy doesn't render undefined everywhere.
+	for (const p of s.players)
+		p.squad = p.squad.map((x) => (typeof x === 'string' ? { item: x, price: 0 } : x));
+	return s;
 }
 
 // ponytail: better-sqlite3 is synchronous and Node is single-threaded, so a caller's
