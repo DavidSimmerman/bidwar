@@ -1,10 +1,11 @@
-import adapter from '@sveltejs/adapter-auto';
+import adapter from '@sveltejs/adapter-node';
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
+import { sandboxServer } from '/home/claude/sandbox/vite/vite.sandbox.preset';
 
 export default defineConfig({
-	server: { host: true, allowedHosts: ['bidwar.simmerman.cc', 'bidwar-v2.simmerman.cc'] },
+	server: sandboxServer(5187),
 	plugins: [
 		tailwindcss(),
 		sveltekit({
