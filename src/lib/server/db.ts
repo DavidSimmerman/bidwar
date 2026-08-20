@@ -3,7 +3,10 @@ import type { GameState } from '$lib/engine';
 import { SEED, type Category, type Draft, type Item } from '$lib/drafts';
 
 // One row per game; state is a JSON blob. Small state, no joins → no ORM, no migrations.
-const db = new Database('bidwar.db');
+// Path is relative to the working directory by default, which is fine locally. In a
+// container that lands inside the image and every redeploy wipes it — point BW_DB at a
+// mounted volume (e.g. /data/bidwar.db) so drafts and games survive.
+const db = new Database(process.env.BW_DB ?? 'bidwar.db');
 db.pragma('journal_mode = WAL');
 db.exec(`
 	CREATE TABLE IF NOT EXISTS games (id TEXT PRIMARY KEY, state TEXT NOT NULL, updated INTEGER NOT NULL);
