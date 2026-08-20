@@ -1,6 +1,6 @@
 # Bid War
 
-Party bidding game. SvelteKit + TS + Tailwind v4 + better-sqlite3.
+Party bidding game. SvelteKit + TS + Tailwind v4 + Postgres (Drizzle ORM).
 
 ## Motion is a requirement, not polish
 
@@ -81,5 +81,12 @@ Screenshots don't prove motion. Measure it, or record a clip.
   client-supplied id for either.
 - **Seed content is written from scratch.** Don't scrape another site's lists
   into the market.
-- Tests: `node --test src/lib/*.test.ts`. Type check: `pnpm check` (keep it at
+- **Never load→mutate→save a game yourself.** Use `withGame(id, fn)`; it holds
+  `SELECT … FOR UPDATE` on the row for the whole read-apply-write. A plain read
+  then write loses concurrent moves — measured at 1 of 25 writes surviving.
+- Migrations are generated (`pnpm db:generate`) from `src/lib/server/schema.ts`
+  and applied automatically on boot by the `init` hook in `hooks.server.ts`.
+- `DATABASE_URL` selects the database; it defaults to the local `bidwar` one.
+  The db tests need a throwaway Postgres and default to `bidwar_test`.
+- Tests: `pnpm test`. Type check: `pnpm check` (keep it at
   0 errors).

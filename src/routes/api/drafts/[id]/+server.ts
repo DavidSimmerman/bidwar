@@ -11,15 +11,15 @@ export const POST: RequestHandler = async ({ params, request, cookies }) => {
 	if (![1, -1, 0].includes(v)) throw error(400, 'invalid vote');
 
 	const pid = playerId(cookies);
-	if (!getDraft(params.id, pid)) throw error(404, 'no such draft');
+	if (!(await getDraft(params.id, pid))) throw error(404, 'no such draft');
 
-	voteDraft(params.id, pid, v as 1 | -1 | 0);
-	const after = getDraft(params.id, pid)!;
+	await voteDraft(params.id, pid, v as 1 | -1 | 0);
+	const after = (await getDraft(params.id, pid))!;
 	return json({ up: after.up, down: after.down, myVote: after.myVote });
 };
 
 // DELETE /api/drafts/:id — creator only (same browser that published it).
-export const DELETE: RequestHandler = ({ params, cookies }) => {
-	if (!deleteDraft(params.id, playerId(cookies))) throw error(403, 'not yours to delete');
+export const DELETE: RequestHandler = async ({ params, cookies }) => {
+	if (!(await deleteDraft(params.id, playerId(cookies)))) throw error(403, 'not yours to delete');
 	return json({ ok: true });
 };

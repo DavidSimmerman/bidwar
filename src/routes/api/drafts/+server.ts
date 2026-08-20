@@ -8,10 +8,10 @@ const HOUR_MS = 3_600_000;
 const MAX_PER_HOUR = 10;
 
 // GET /api/drafts?sort=popular&category=Sports&q=nba
-export const GET: RequestHandler = ({ url, cookies }) => {
+export const GET: RequestHandler = async ({ url, cookies }) => {
 	const category = url.searchParams.get('category');
 	return json({
-		drafts: listDrafts({
+		drafts: await listDrafts({
 			pid: playerId(cookies),
 			sort: url.searchParams.get('sort') ?? undefined,
 			category: isCategory(category) ? category : undefined,
@@ -34,8 +34,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
 	const owner = playerId(cookies);
 	const now = Date.now();
-	if (recentDraftCount(owner, now - HOUR_MS) >= MAX_PER_HOUR) throw error(429, 'slow down — try again later');
+	if ((await recentDraftCount(owner, now - HOUR_MS)) >= MAX_PER_HOUR) throw error(429, 'slow down — try again later');
 
-	const id = createDraft({ title, category: body.category, items, author: cleanName(body.author), owner, now });
+	const id = await createDraft({ title, category: body.category, items, author: cleanName(body.author), owner, now });
 	return json({ id }, { status: 201 });
 };
